@@ -423,8 +423,12 @@ export const useStore = create<StoreState>((set, get) => ({
       pin_code: employee.pinCode,
       is_active: employee.isActive
     });
-    if (!error) get().fetchInitialData();
-    else console.error(error);
+    if (!error) {
+      get().fetchInitialData();
+    } else {
+      console.error(error);
+      alert("Xodim qo'shishda xatolik: " + error.message);
+    }
   },
 
   updateEmployee: async (employee) => {

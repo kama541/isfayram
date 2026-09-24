@@ -18,10 +18,8 @@ import { AdminLogin } from './pages/admin/AdminLogin';
 import { FinanceManagement } from './pages/admin/FinanceManagement';
 import { CameraManagement } from './pages/admin/CameraManagement';
 import { InventoryManagement } from './pages/admin/InventoryManagement';
+import { Settings } from './pages/admin/Settings';
 import { KDS } from './pages/kds/KDS';
-
-// Placeholders for other pages
-const Placeholder = ({ title }: { title: string }) => <div className="p-8 text-2xl font-bold">{title} sahifasi - Tez kunda</div>;
 
 function App() {
   const fetchInitialData = useStore(state => state.fetchInitialData);
@@ -63,7 +61,7 @@ function App() {
               <Route path="/admin/finance" element={<DashboardLayout role="admin"><FinanceManagement /></DashboardLayout>} />
               <Route path="/admin/inventory" element={<DashboardLayout role="admin"><InventoryManagement /></DashboardLayout>} />
               <Route path="/admin/cameras" element={<DashboardLayout role="admin"><CameraManagement /></DashboardLayout>} />
-              <Route path="/admin/settings" element={<DashboardLayout role="admin"><Placeholder title="Sozlamalar" /></DashboardLayout>} />
+              <Route path="/admin/settings" element={<DashboardLayout role="admin"><Settings /></DashboardLayout>} />
 
               {/* Cashier Routes */}
               <Route path="/cashier" element={<DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout>} />

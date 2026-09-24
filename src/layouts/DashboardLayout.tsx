@@ -39,7 +39,7 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 scrollbar-hide">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>

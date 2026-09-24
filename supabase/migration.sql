@@ -25,7 +25,7 @@ ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 
 -- Create permissive policies for testing
 DROP POLICY IF EXISTS "Allow all on employees" ON public.employees;
-CREATE POLICY "Allow all on employees" ON public.employees FOR ALL USING (true);
+CREATE POLICY "Allow all on employees" ON public.employees FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Allow all on expenses" ON public.expenses;
 CREATE POLICY "Allow all on expenses" ON public.expenses FOR ALL USING (true);
