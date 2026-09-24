@@ -1,9 +1,10 @@
-import { UtensilsCrossed, Bell, CheckCircle2 } from 'lucide-react';
+import { Bell, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { Link } from 'react-router-dom';
+import { TablesOverview } from '../../components/TablesOverview';
 
 export const WaiterDashboard = () => {
-  const { tables, waiterCalls, resolveWaiterCall } = useStore();
+  const { waiterCalls, resolveWaiterCall } = useStore();
   const pendingCalls = waiterCalls.filter(c => c.status === 'pending');
 
   return (
@@ -22,37 +23,8 @@ export const WaiterDashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-3 space-y-6">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <UtensilsCrossed className="w-5 h-5 text-blue-500" /> Stollar
-          </h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {tables.map(table => (
-              <div 
-                key={table.id} 
-                className={`p-6 rounded-2xl border-2 transition-all hover:shadow-md cursor-pointer relative ${
-                  table.status === 'available' ? 'border-transparent bg-emerald-50 text-emerald-900' :
-                  table.status === 'occupied' ? 'border-transparent bg-red-50 text-red-900' :
-                  'border-transparent bg-amber-50 text-amber-900'
-                }`}
-              >
-                <div className="absolute top-3 right-3">
-                  <div className={`w-2 h-2 rounded-full ${
-                    table.status === 'available' ? 'bg-emerald-500' :
-                    table.status === 'occupied' ? 'bg-red-500' : 'bg-amber-500'
-                  }`} />
-                </div>
-                <h3 className="text-2xl font-bold text-center mb-2">Stol {table.number}</h3>
-                <p className={`text-center text-xs font-semibold capitalize ${
-                  table.status === 'available' ? 'text-emerald-600' :
-                  table.status === 'occupied' ? 'text-red-600' : 'text-amber-600'
-                }`}>
-                  {table.status === 'available' ? 'Bo\'sh' : table.status === 'occupied' ? 'Band' : 'Band qilingan'}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="lg:col-span-3">
+          <TablesOverview />
         </div>
         
         <div className="space-y-6">
@@ -65,7 +37,7 @@ export const WaiterDashboard = () => {
                 <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
                 <div className="flex justify-between items-center pl-2">
                   <div>
-                    <h3 className="font-bold text-red-700">Stol {call.tableId.replace('t', '')}</h3>
+                    <h3 className="font-bold text-red-700">№{call.tableId.replace('t', '')}</h3>
                     <p className="text-xs font-medium text-red-600 mt-0.5">Ofitsiant chaqirmoqda!</p>
                   </div>
                   <button 

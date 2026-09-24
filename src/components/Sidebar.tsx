@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, LogOut, ChevronRight, User as UserIcon } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, LogOut, ChevronRight, User as UserIcon, Wallet, Video, Package } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -10,14 +10,17 @@ const adminLinks = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
   { name: 'Menyu', path: '/admin/menu', icon: UtensilsCrossed },
   { name: 'Buyurtmalar', path: '/admin/orders', icon: ClipboardList },
+  { name: 'Moliya', path: '/admin/finance', icon: Wallet },
+  { name: 'Omborxona', path: '/admin/inventory', icon: Package },
   { name: 'Xodimlar', path: '/admin/staff', icon: Users },
+  { name: 'Kameralar', path: '/admin/cameras', icon: Video },
   { name: 'Sozlamalar', path: '/admin/settings', icon: Settings },
 ];
 
 const cashierLinks = [
   { name: 'Dashboard', path: '/cashier', icon: LayoutDashboard },
-  { name: 'To\'lovlar', path: '/cashier/payments', icon: ShoppingCart },
   { name: 'Buyurtmalar', path: '/cashier/orders', icon: ClipboardList },
+  { name: 'Moliya', path: '/cashier/finance', icon: Wallet },
 ];
 
 const waiterLinks = [
@@ -38,7 +41,7 @@ export const Sidebar = ({ role }: SidebarProps) => {
           <UtensilsCrossed className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Oshxona POS</h1>
+          <h1 className="text-xl font-bold text-white tracking-tight">Isfaryam</h1>
           <p className="text-xs text-slate-400 font-medium capitalize tracking-wider">{role} Paneli</p>
         </div>
       </div>

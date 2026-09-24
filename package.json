@@ -13,10 +13,13 @@
     "@supabase/supabase-js": "^2.117.1",
     "@tailwindcss/vite": "^4.3.3",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^13.4.1",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
+    "recharts": "^3.10.1",
     "tailwind-merge": "^3.7.0",
     "zustand": "^5.0.15"
   },

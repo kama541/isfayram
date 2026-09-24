@@ -44,6 +44,7 @@ export interface Order {
   status: 'pending' | 'preparing' | 'ready' | 'served' | 'paid' | 'cancelled';
   items: OrderItem[];
   totalAmount: number;
+  paymentMethod?: 'cash' | 'card';
   createdAt: string;
   updatedAt: string;
 }
@@ -53,4 +54,63 @@ export interface WaiterCall {
   tableId: string;
   status: 'pending' | 'resolved';
   createdAt: string;
+}
+
+export interface Employee {
+  id: string;
+  fullName: string;
+  role: 'waiter' | 'cashier';
+  pinCode: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface Expense {
+  id: string;
+  category: string;
+  amount: number;
+  paymentDate: string;
+  description?: string;
+  paymentMethod: string;
+  createdAt?: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  unit: string; // kg, litr, dona, metr
+  currentStock: number;
+  minStockLevel: number;
+  purchasePrice?: number;
+  supplier?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  menuItemId: string;
+  inventoryItemId: string;
+  quantity: number;
+  notes?: string;
+}
+
+export interface InventoryTransaction {
+  id: string;
+  itemId: string;
+  transactionType: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  referenceId?: string; // Order ID if it was sold
+  createdAt?: string;
+}
+
+export interface NotebookEntry {
+  id: string;
+  type: 'debt' | 'advance';
+  personName: string;
+  amount: number;
+  notes?: string;
+  status: 'unpaid' | 'paid';
+  createdAt?: string;
+  updatedAt?: string;
 }

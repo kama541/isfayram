@@ -2,15 +2,21 @@ import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency } from '../../utils/format';
 import { Plus, Minus, ShoppingCart, ChevronLeft } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
 export const NewOrder = () => {
-  const { menuItems, categories, tables, createOrder } = useStore();
+  const { menuItems, categories, tables, orders, createOrder, addItemsToOrder } = useStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tableParam = searchParams.get('table');
   
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
-  const [selectedTable, setSelectedTable] = useState('');
+  const [selectedTable, setSelectedTable] = useState(tableParam || '');
   const [cart, setCart] = useState<{id: string, quantity: number, price: number}[]>([]);
+
+  // Check if this table has an active order
+  const activeOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'paid' && o.status !== 'cancelled') : null;
+
 
   const filteredItems = activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems;
 
@@ -40,19 +46,30 @@ export const NewOrder = () => {
     if (!selectedTable) return alert('Stolni tanlang!');
     if (cart.length === 0) return alert('Buyurtma bo\'sh!');
 
-    createOrder({
-      tableId: selectedTable,
-      waiterId: '3', // Mock waiter id
-      status: 'pending',
-      items: cart.map(i => ({
-        id: `oi${Date.now()}${i.id}`,
-        menuItemId: i.id,
-        quantity: i.quantity,
-        price: i.price
-      })),
-      totalAmount
-    });
-    navigate('/waiter');
+    const mappedItems = cart.map(i => ({
+      id: `oi${Date.now()}${i.id}`,
+      menuItemId: i.id,
+      quantity: i.quantity,
+      price: i.price
+    }));
+
+    if (activeOrder) {
+      addItemsToOrder(activeOrder.id, mappedItems, totalAmount);
+    } else {
+      const storedUser = localStorage.getItem('currentUser');
+      const currentUser = storedUser ? JSON.parse(storedUser) : null;
+      
+      createOrder({
+        tableId: selectedTable,
+        waiterId: currentUser?.id || undefined,
+        status: 'pending',
+        items: mappedItems,
+        totalAmount
+      });
+    }
+    
+    // Go back
+    navigate(-1);
   };
 
   return (
@@ -118,14 +135,47 @@ export const NewOrder = () => {
             onChange={(e) => setSelectedTable(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
           >
-            <option value="">Stolni tanlang</option>
-            {tables.filter(t => t.status === 'available').map(t => (
-              <option key={t.id} value={t.id}>Stol {t.number}</option>
+            <option value="">Stolni tanlang (Yoki S-oboy)</option>
+            <option value="takeaway" className="font-bold text-blue-600">S-oboy (Olib ketish)</option>
+            {tables.filter(t => t.status === 'available' || t.id === selectedTable).map(t => (
+              <option key={t.id} value={t.id}>№{t.number} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
             ))}
           </select>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+          
+          {/* Odingi narsalar (Existing items) */}
+          {activeOrder && activeOrder.items.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-slate-500 mb-3 px-1 uppercase tracking-wider">Avvalgi buyurtmalar</h3>
+              <div className="space-y-3">
+                {activeOrder.items.map(item => {
+                  const menuItem = menuItems.find(m => m.id === item.menuItemId);
+                  if (!menuItem) return null;
+                  return (
+                    <div key={item.id} className="flex justify-between items-center bg-slate-100 border border-slate-200 p-3 rounded-xl opacity-80">
+                      <div className="flex-1 pr-4">
+                        <h4 className="font-semibold text-slate-700 text-sm">{menuItem.name}</h4>
+                        <p className="text-slate-500 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>
+                      </div>
+                      <div className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-bold text-sm text-slate-600">
+                        {item.quantity} dona
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Yangi qo'shilgan narsalar */}
+          {(cart.length > 0 || activeOrder) && (
+            <h3 className="text-sm font-bold text-slate-500 mb-3 px-1 uppercase tracking-wider">
+              {activeOrder ? 'Yangi qo\'shilmoqda' : 'Tanlanganlar'}
+            </h3>
+          )}
+
           {cart.map(item => {
             const menuItem = menuItems.find(m => m.id === item.id);
             if (!menuItem) return null;
@@ -165,7 +215,7 @@ export const NewOrder = () => {
             disabled={cart.length === 0 || !selectedTable}
             className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
           >
-            Buyurtmani Yuborish
+            {activeOrder ? 'Qo\'shimcha Qilish' : 'Buyurtmani Yuborish'}
           </button>
         </div>
       </div>

@@ -5,11 +5,50 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Drop existing tables to avoid "relation already exists" errors
+DROP TABLE IF EXISTS public.waiter_calls CASCADE;
+DROP TABLE IF EXISTS public.inventory_transactions CASCADE;
+DROP TABLE IF EXISTS public.inventory_items CASCADE;
+DROP TABLE IF EXISTS public.reservations CASCADE;
+DROP TABLE IF EXISTS public.payments CASCADE;
+DROP TABLE IF EXISTS public.order_items CASCADE;
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.menu_items CASCADE;
+DROP TABLE IF EXISTS public.menu_categories CASCADE;
+DROP TABLE IF EXISTS public.tables CASCADE;
+DROP TABLE IF EXISTS public.zones CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+DROP TABLE IF EXISTS public.employees CASCADE;
+DROP TABLE IF EXISTS public.expenses CASCADE;
+
 -- 1. ROLES & PROFILES
 CREATE TABLE public.profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     role TEXT NOT NULL CHECK (role IN ('admin', 'cashier', 'waiter', 'kitchen')),
     full_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 1.5. EMPLOYEES (Staff PIN Login without full Auth)
+CREATE TABLE public.employees (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('cashier', 'waiter')),
+    pin_code TEXT NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 1.6. EXPENSES (Finance and Utility Management)
+CREATE TABLE public.expenses (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    category TEXT NOT NULL CHECK (category IN ('Elektr energiyasi', 'Gaz', 'Suv', 'Internet', 'Ijara', 'Ishchilar maoshi', 'Ta''mirlash xarajatlari', 'Boshqa')),
+    amount DECIMAL(10,2) NOT NULL,
+    payment_date DATE NOT NULL,
+    description TEXT,
+    payment_method TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -130,6 +169,15 @@ CREATE TABLE public.inventory_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE public.recipe_ingredients (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    menu_item_id UUID REFERENCES public.menu_items(id) ON DELETE CASCADE,
+    inventory_item_id UUID REFERENCES public.inventory_items(id) ON DELETE CASCADE,
+    quantity DECIMAL(10,3) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 8. WAITER CALLS
 CREATE TABLE public.waiter_calls (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -183,3 +231,22 @@ CREATE POLICY "Staff can do everything" ON public.reservations FOR ALL USING (au
 CREATE POLICY "Staff can do everything" ON public.inventory_items FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Staff can do everything" ON public.inventory_transactions FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Staff can do everything" ON public.waiter_calls FOR ALL USING (auth.role() = 'authenticated');
+
+-- Temporary permissive policies for local testing without auth
+CREATE POLICY "Allow all on employees" ON public.employees FOR ALL USING (true);
+CREATE POLICY "Allow all on expenses" ON public.expenses FOR ALL USING (true);
+ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+-- 9. NOTEBOOK (DAFTARCHA)
+CREATE TABLE public.notebook_entries (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    type TEXT NOT NULL CHECK (type IN ('debt', 'advance')),
+    person_name TEXT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    notes TEXT,
+    status TEXT NOT NULL DEFAULT 'unpaid' CHECK (status IN ('unpaid', 'paid')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.notebook_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on notebook_entries" ON public.notebook_entries FOR ALL USING (true);

@@ -39,11 +39,13 @@ export const OrdersManagement = () => {
             <tbody className="divide-y divide-slate-100">
               {orders.slice().reverse().map(order => (
                 <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-700">#{order.id.slice(1)}</td>
+                  <td className="px-6 py-4 font-medium text-slate-700">#{order.id.slice(0, 8)}</td>
                   <td className="px-6 py-4 text-slate-600">{formatDate(order.createdAt)}</td>
                   <td className="px-6 py-4">
-                    <div className="text-slate-700 font-medium">Stol {order.tableId.replace('t', '')}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{order.waiterId ? `Xodim: ${order.waiterId}` : 'Mijoz (QR)'}</div>
+                    <div className="text-slate-700 font-medium">
+                      {order.tableId ? `Stol ${order.tableId.replace('t', '')}` : 'S-oboy (Olib ketish)'}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">{order.waiterId ? `Xodim: ${order.waiterId}` : 'Mijoz (QR/Kassir)'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
