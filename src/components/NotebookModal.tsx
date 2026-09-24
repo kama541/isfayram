@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { BookOpen, Plus, Search, CheckCircle, Clock } from 'lucide-react';
+import { BookOpen, Plus, CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { formatCurrency, formatDate } from '../utils/format';
-import type { NotebookEntry } from '../types';
+// import type { NotebookEntry } from '../types';
 
 interface NotebookModalProps {
   onClose: () => void;

@@ -6,7 +6,7 @@ import { TablesOverview } from '../../components/TablesOverview';
 import { WaiterDetailsModal } from '../../components/WaiterDetailsModal';
 
 export const AdminDashboard = () => {
-  const { orders, employees, expenses } = useStore();
+  const { orders, employees } = useStore();
   const [selectedWaiterId, setSelectedWaiterId] = useState<string | null>(null);
 
   const todayRevenue = orders
@@ -23,9 +23,7 @@ export const AdminDashboard = () => {
   
   const staffCount = employees.filter(e => e.isActive).length;
   
-  const totalRevenue = orders.filter(o => o.status === 'paid').reduce((sum, o) => sum + o.totalAmount, 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const netProfit = totalRevenue - totalExpenses;
+
 
   const stats = [
     { title: 'Bugungi Tushum', value: formatCurrency(todayRevenue), icon: DollarSign, color: 'bg-blue-500', trend: 'Bugun' },
@@ -39,7 +37,7 @@ export const AdminDashboard = () => {
     const waiterOrders = orders.filter(o => o.waiterId === waiter.id && o.status === 'paid' && new Date(o.updatedAt || o.createdAt).getMonth() === currentMonth);
     const orderCount = waiterOrders.length;
     const totalSales = waiterOrders.reduce((sum, o) => sum + o.totalAmount, 0);
-    return { ...waiter, orderCount, totalSales };
+    return { ...waiter, orderCount, totalSales, orders: waiterOrders };
   }).sort((a, b) => b.totalSales - a.totalSales);
 
   return (

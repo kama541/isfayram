@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { Package, Plus, Search, AlertCircle, Trash2, Edit3, Beaker, Save, ArrowRightLeft } from 'lucide-react';
-import { formatCurrency } from '../../utils/format';
+import { Package, Plus, Search, AlertCircle, Trash2, Beaker, Save, ArrowRightLeft } from 'lucide-react';
 
 export const InventoryManagement = () => {
   const { inventoryItems, addInventoryItem, updateInventoryItem, deleteInventoryItem, addInventoryTransaction, menuItems, recipeIngredients, setRecipe } = useStore();

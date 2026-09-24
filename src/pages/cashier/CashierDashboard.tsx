@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, CreditCard, ChevronRight } from 'lucide-react';
+import { CheckCircle, Clock, CreditCard } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';

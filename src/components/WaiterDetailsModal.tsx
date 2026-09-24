@@ -1,5 +1,5 @@
 import { useStore } from '../store/useStore';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency } from '../utils/format';
 import { Users, X } from 'lucide-react';
 import type { Order } from '../types';
 
