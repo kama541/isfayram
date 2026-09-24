@@ -151,6 +151,16 @@ export const Login = () => {
           )}
         </div>
       </div>
+
+      <div className="mt-12">
+        <button 
+          onClick={() => navigate('/admin/login')}
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-medium transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
+        >
+          <Lock className="w-4 h-4" />
+          Admin sifatida kirish
+        </button>
+      </div>
     </div>
   );
 };
