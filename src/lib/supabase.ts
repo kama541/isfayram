@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_MY_SUPA_URL || import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_MY_SUPA_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase URL or Anon Key is missing. Check your .env file.');
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'http://localhost:54321', 
+  supabaseUrl || 'http://localhost:54321',
   supabaseAnonKey || 'placeholder_key'
 );
