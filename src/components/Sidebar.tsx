@@ -13,6 +13,8 @@ const adminLinks = [
   { name: 'Obuna', path: '/admin/subscription', icon: CreditCard },
   { name: 'HR Kabinet', path: '/admin/hr', icon: UserCog, hasSubmenu: true },
   { name: 'Hisobotlar', path: '/admin/reports', icon: BarChart3, hasSubmenu: true },
+  { name: 'Kassir Panel', path: '/cashier', icon: ClipboardList },
+  { name: 'Ofitsiant Panel', path: '/waiter', icon: Grid },
 ];
 
 const cashierLinks = [
@@ -107,6 +109,19 @@ export const Sidebar = ({ role }: SidebarProps) => {
               </Link>
             );
           })}
+          {role !== 'admin' && localStorage.getItem('adminUser') && (
+            <div className="pt-4 mt-2 border-t border-white/10">
+              <Link
+                to="/admin"
+                className="group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-amber-400 hover:bg-white/5 hover:text-amber-300 font-bold"
+              >
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-[18px] h-[18px]" />
+                  <span className="text-[15px]">Admin Panelga Qaytish</span>
+                </div>
+              </Link>
+            </div>
+          )}
       </nav>
 
       {/* User Profile */}
