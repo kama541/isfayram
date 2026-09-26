@@ -8,8 +8,7 @@ export const StaffManagement = () => {
 
   const filteredEmployees = employees.filter(emp => 
     emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (emp.phone && emp.phone.includes(searchTerm)) ||
-    (emp.pin && emp.pin.includes(searchTerm))
+    (emp.pinCode && emp.pinCode.includes(searchTerm))
   );
 
   return (
@@ -43,22 +42,40 @@ export const StaffManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
+              
+              <tr className="hover:bg-white/5 transition-colors group cursor-pointer">
+                <td className="py-4 px-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-medium">admin</span>
+                    <div className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px]">✓</div>
+                  </div>
+                  <div className="text-sm text-slate-400 mt-0.5">Rahbar</div>
+                </td>
+                <td className="py-4 px-6 text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500 text-xs">📞</span> +998 91 676 91 98
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <span className="inline-block px-3 py-1 bg-[#3b4358] rounded-full text-xs text-slate-300 font-medium border border-white/5">
+                    Isfayram Kafe
+                  </span>
+                </td>
+              </tr>
+
               {filteredEmployees.map((emp, index) => (
-                <tr key={emp.id} className={`hover:bg-white/5 transition-colors group cursor-pointer ${index % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
+                <tr key={emp.id} className={`hover:bg-white/5 transition-colors group cursor-pointer ${(index + 1) % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
-                      <span className={`text-white font-medium ${emp.role === 'admin' ? '' : 'uppercase text-sm'}`}>{emp.fullName}</span>
-                      {emp.role === 'admin' && (
-                        <div className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px]">✓</div>
-                      )}
+                      <span className="text-white font-medium uppercase text-sm">{emp.fullName}</span>
                     </div>
                     <div className="text-sm text-slate-400 mt-0.5">
-                      {emp.role === 'admin' ? 'Rahbar' : emp.role === 'cashier' ? 'Kassir' : emp.role === 'waiter' ? 'Ofitsiant' : emp.role}
+                      {emp.role === 'cashier' ? 'Kassir' : emp.role === 'waiter' ? 'Ofitsiant' : emp.role}
                     </div>
                   </td>
                   <td className="py-4 px-6 text-slate-300">
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-500 text-xs">📞</span> {emp.phone || 'Kiritilmagan'}
+                      <span className="text-slate-500 text-xs">🔒</span> PIN: {emp.pinCode || 'Kiritilmagan'}
                     </div>
                   </td>
                   <td className="py-4 px-6">
