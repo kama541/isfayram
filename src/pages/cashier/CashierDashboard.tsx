@@ -5,7 +5,8 @@ import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
 import { TimeElapsed } from '../../components/TimeElapsed';
-import { Printer, BookOpen, Power, ListX, X, Check, Calculator } from 'lucide-react';
+import { PaymentModal } from '../../components/PaymentModal';
+import { Printer, BookOpen, Power, ListX, X, Check, Calculator, Banknote } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
@@ -14,6 +15,7 @@ export const CashierDashboard = () => {
   const [showNotebook, setShowNotebook] = useState(false);
   const [showStopList, setShowStopList] = useState(false);
   const [showShiftReport, setShowShiftReport] = useState(false);
+  const [paymentOrder, setPaymentOrder] = useState<any>(null);
 
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -125,9 +127,10 @@ export const CashierDashboard = () => {
 
                 {/* Hover actions */}
                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                  <button onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'paid', 'cash'); }} className="w-full bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-emerald-600 transition-colors">Naqd to'lov</button>
-                  <button onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'paid', 'card'); }} className="w-full bg-blue-500 text-white py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-colors">Karta orqali</button>
-                  <div className="flex gap-2 w-full mt-2">
+                  <button onClick={(e) => { e.stopPropagation(); setPaymentOrder(order); }} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
+                    <Banknote className="w-5 h-5" /> To'lov qilish
+                  </button>
+                  <div className="flex gap-2 w-full mt-1">
                     <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Chek</button>
                     <button onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'cancelled'); }} className="flex-1 bg-red-500/20 text-red-200 py-2 rounded-xl text-sm font-bold hover:bg-red-500/40 transition-colors">Bekor</button>
                   </div>
@@ -310,6 +313,18 @@ export const CashierDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {paymentOrder && (
+        <PaymentModal
+          order={paymentOrder}
+          onClose={() => setPaymentOrder(null)}
+          onPay={(orderId, method) => {
+            updateOrderStatus(orderId, 'paid', method);
+            const ord = orders.find(o => o.id === orderId);
+            if (ord) handlePrint(ord);
+          }}
+        />
       )}
     </div>
   );

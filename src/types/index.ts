@@ -44,7 +44,11 @@ export interface Order {
   status: 'pending' | 'preparing' | 'ready' | 'served' | 'paid' | 'cancelled';
   items: OrderItem[];
   totalAmount: number;
-  paymentMethod?: 'cash' | 'card';
+  paymentMethod?: 'cash' | 'card' | 'mixed';
+  cashAmount?: number;
+  cardAmount?: number;
+  discountAmount?: number;
+  customerPhone?: string;
   createdAt: string;
   updatedAt: string;
 }
