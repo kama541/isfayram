@@ -52,7 +52,7 @@ export const TablesOverview = () => {
                   </div>
                   <div className="text-[13px] font-bold mt-1 tracking-tight">{activeOrder?.totalAmount?.toLocaleString('uz-UZ')} sum</div>
                   {waiterName && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiterName}</div>}
-                  <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={activeOrder.createdAt} /></div>
+                  {activeOrder && <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={activeOrder.createdAt} /></div>}
                 </>
               ) : (
                 <div className="text-sm font-medium opacity-90 mt-2">{table.seats}</div>
