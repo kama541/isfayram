@@ -4,11 +4,11 @@ import { formatCurrency, formatDate } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
-import { Printer, BookOpen } from 'lucide-react';
+import { Printer, BookOpen, Power } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
-  const { orders, tables, updateOrderStatus } = useStore();
+  const { orders, tables, updateOrderStatus, isSystemOpen, setSystemOpen } = useStore();
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
 
@@ -37,9 +37,25 @@ export const CashierDashboard = () => {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">To'lovlarni qabul qilish va nazorat qilish</p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (window.confirm(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi (mijozlar menyuni ko'ra oladi). Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?")) {
+                setSystemOpen(!isSystemOpen);
+              }
+            }}
+            className={`px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 ${
+              isSystemOpen 
+                ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50' 
+                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
+            }`}
+          >
+            <Power className="w-5 h-5" />
+            {isSystemOpen ? 'Tizimni yopish' : 'Tizimni ochish'}
+          </button>
+          
           <button 
             onClick={() => setShowNotebook(true)}
-            className="bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2"
+            className="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-2"
           >
             <BookOpen className="w-5 h-5" />
             Daftarcha
