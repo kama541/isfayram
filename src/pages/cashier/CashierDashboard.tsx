@@ -4,13 +4,14 @@ import { formatCurrency, formatDate } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
-import { Printer, BookOpen, Power } from 'lucide-react';
+import { Printer, BookOpen, Power, ListX, X, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
-  const { orders, tables, updateOrderStatus, updateOrderTable, isSystemOpen, setSystemOpen } = useStore();
+  const { orders, tables, updateOrderStatus, updateOrderTable, isSystemOpen, setSystemOpen, menuItems, updateMenuItemAvailability } = useStore();
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
+  const [showStopList, setShowStopList] = useState(false);
 
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -60,6 +61,15 @@ export const CashierDashboard = () => {
             <BookOpen className="w-5 h-5" />
             Daftarcha
           </button>
+          
+          <button 
+            onClick={() => setShowStopList(true)}
+            className="bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-5 py-2.5 rounded-xl font-bold hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-2"
+          >
+            <ListX className="w-5 h-5" />
+            Stop-list
+          </button>
+
           <Link 
             to="/cashier/new-order?table=takeaway"
             className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
@@ -236,6 +246,52 @@ export const CashierDashboard = () => {
       </div>
 
       {showNotebook && <NotebookModal onClose={() => setShowNotebook(false)} />}
+      
+      {showStopList && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <ListX className="w-6 h-6 text-orange-500" />
+                Stop-list & Go-list
+              </h2>
+              <button 
+                onClick={() => setShowStopList(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 rounded-xl"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-3">
+                {menuItems.map(item => (
+                  <div key={item.id} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div>
+                      <h3 className="font-bold text-slate-800 dark:text-slate-200">{item.name}</h3>
+                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{formatCurrency(item.price)}</p>
+                    </div>
+                    <button
+                      onClick={() => updateMenuItemAvailability(item.id, !item.isAvailable)}
+                      className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors ${
+                        item.isAvailable 
+                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                          : 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400'
+                      }`}
+                    >
+                      {item.isAvailable ? (
+                        <><Check className="w-4 h-4" /> Go (Bor)</>
+                      ) : (
+                        <><X className="w-4 h-4" /> Stop (Tugagan)</>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

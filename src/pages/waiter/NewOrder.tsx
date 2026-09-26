@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency } from '../../utils/format';
 import { Plus, Minus, ShoppingCart, ChevronLeft } from 'lucide-react';
@@ -14,7 +14,7 @@ export const NewOrder = () => {
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const isCashier = currentUser?.role === 'cashier';
 
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
+  const [activeCategory, setActiveCategory] = useState('popular');
   const [selectedTable, setSelectedTable] = useState(tableParam || '');
   const [selectedWaiter, setSelectedWaiter] = useState('');
   const [cart, setCart] = useState<{id: string, quantity: number, price: number}[]>([]);
@@ -23,7 +23,24 @@ export const NewOrder = () => {
   const activeOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'paid' && o.status !== 'cancelled') : null;
 
 
-  const filteredItems = activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems;
+  const popularItems = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    orders.forEach(o => {
+      o.items.forEach(i => {
+        counts[i.menuItemId] = (counts[i.menuItemId] || 0) + i.quantity;
+      });
+    });
+    const sortedIds = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+      
+    if (sortedIds.length === 0) return menuItems.slice(0, 4);
+    return sortedIds.map(id => menuItems.find(m => m.id === id)).filter(Boolean).slice(0, 6) as typeof menuItems;
+  }, [orders, menuItems]);
+
+  const filteredItems = activeCategory === 'popular' 
+    ? popularItems 
+    : (activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems);
 
   const addToCart = (item: any) => {
     setCart(prev => {
@@ -88,6 +105,16 @@ export const NewOrder = () => {
             </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button
+              onClick={() => setActiveCategory('popular')}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
+                activeCategory === 'popular' 
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' 
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              🔥 Populyar
+            </button>
             {categories.map(c => (
               <button 
                 key={c.id}

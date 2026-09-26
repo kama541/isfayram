@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ShoppingCart, BellRing, Plus, Minus, CheckCircle, UtensilsCrossed } from 'lucide-react';
 import { useStore } from '../../store/useStore';
@@ -6,13 +6,30 @@ import { formatCurrency } from '../../utils/format';
 
 export const CustomerMenu = () => {
   const { tableId } = useParams();
-  const { menuItems, categories, createOrder, createWaiterCall } = useStore();
+  const { menuItems, categories, orders, createOrder, createWaiterCall } = useStore();
   
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
+  const [activeCategory, setActiveCategory] = useState('popular');
   const [cart, setCart] = useState<{id: string, quantity: number, price: number}[]>([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
 
-  const filteredItems = activeCategory ? menuItems.filter(item => item.categoryId === activeCategory) : menuItems;
+  const popularItems = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    orders.forEach(o => {
+      o.items.forEach(i => {
+        counts[i.menuItemId] = (counts[i.menuItemId] || 0) + i.quantity;
+      });
+    });
+    const sortedIds = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
+      
+    if (sortedIds.length === 0) return menuItems.slice(0, 4);
+    return sortedIds.map(id => menuItems.find(m => m.id === id)).filter(Boolean).slice(0, 6) as typeof menuItems;
+  }, [orders, menuItems]);
+
+  const filteredItems = activeCategory === 'popular' 
+    ? popularItems 
+    : (activeCategory ? menuItems.filter(item => item.categoryId === activeCategory) : menuItems);
 
   const addToCart = (item: any) => {
     setCart(prev => {
@@ -98,6 +115,17 @@ export const CustomerMenu = () => {
         </div>
         
         <div className="flex overflow-x-auto px-6 py-3.5 gap-2.5 no-scrollbar border-t border-slate-100 bg-slate-50/50">
+          <button
+            onClick={() => setActiveCategory('popular')}
+            className={`whitespace-nowrap px-5 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${
+              activeCategory === 'popular' 
+                ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' 
+                : 'bg-white text-slate-600 shadow-sm border border-slate-200'
+            }`}
+          >
+            🔥 Populyar
+          </button>
+          
           {categories.map(category => (
             <button
               key={category.id}
