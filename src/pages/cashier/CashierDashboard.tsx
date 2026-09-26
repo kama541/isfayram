@@ -110,8 +110,9 @@ export const CashierDashboard = () => {
                 <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
-                <div className="text-[26px] font-bold tracking-tight">
-                  {order.totalAmount.toLocaleString('uz-UZ')} sum
+                <div className="text-base font-medium tracking-tight opacity-90 leading-tight">
+                  {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
+                  {order.items.length > 3 ? '...' : ''}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
@@ -154,8 +155,9 @@ export const CashierDashboard = () => {
                 <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
-                <div className="text-[26px] font-bold tracking-tight opacity-70 line-through">
-                  {order.totalAmount.toLocaleString('uz-UZ')} sum
+                <div className="text-base font-medium tracking-tight opacity-70 leading-tight">
+                  {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
+                  {order.items.length > 3 ? '...' : ''}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
@@ -187,8 +189,9 @@ export const CashierDashboard = () => {
                   <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                     <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                   </div>
-                  <div className="text-[26px] font-bold tracking-tight">
-                    {order.totalAmount.toLocaleString('uz-UZ')} sum
+                  <div className="text-base font-medium tracking-tight leading-tight">
+                    {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
+                    {order.items.length > 3 ? '...' : ''}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 text-amber-200">

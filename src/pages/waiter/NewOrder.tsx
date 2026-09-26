@@ -143,7 +143,7 @@ export const NewOrder = () => {
               >
                 <div className="p-4">
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
-                  <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>
+                  {isCashier && <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>}
                 </div>
               </div>
             ))}
@@ -199,7 +199,7 @@ export const NewOrder = () => {
                     <div key={item.id} className="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 p-3 rounded-xl opacity-80">
                       <div className="flex-1 pr-4">
                         <h4 className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{menuItem.name}</h4>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>
+                        {isCashier && <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>}
                       </div>
                       <div className="bg-white dark:bg-slate-700 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-sm text-slate-600 dark:text-slate-300">
                         {item.quantity} dona
@@ -225,7 +225,7 @@ export const NewOrder = () => {
               <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
                 <div className="flex-1 pr-4">
                   <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{menuItem.name}</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">{formatCurrency(item.price * item.quantity)}</p>
+                  {isCashier && <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">{formatCurrency(item.price * item.quantity)}</p>}
                 </div>
                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-xl px-1.5 py-1.5 border border-slate-100 dark:border-slate-700/50">
                   <button onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} className="p-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm hover:text-red-600 dark:hover:text-red-400 transition-colors">
@@ -249,8 +249,8 @@ export const NewOrder = () => {
 
         <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div className="flex justify-between items-center mb-6">
-            <span className="font-bold text-slate-500 dark:text-slate-400">Jami summa:</span>
-            <span className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">{formatCurrency(totalAmount)}</span>
+            <span className="font-bold text-slate-500 dark:text-slate-400">{isCashier ? 'Jami summa:' : 'Tanlangan taomlar:'}</span>
+            <span className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">{isCashier ? formatCurrency(totalAmount) : `${cart.reduce((a, b) => a + b.quantity, 0)} ta`}</span>
           </div>
           <button 
             onClick={handleSubmit}
