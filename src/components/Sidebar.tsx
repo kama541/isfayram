@@ -7,12 +7,12 @@ interface SidebarProps {
 }
 
 const adminLinks = [
-  { name: 'Рестораны', path: '/admin', icon: Building2 },
-  { name: 'Сотрудники', path: '/admin/staff', icon: Users },
-  { name: 'Клиенты', path: '/admin/customers', icon: UserSquare2 },
-  { name: 'Подписка', path: '/admin/subscription', icon: CreditCard },
-  { name: 'HR Кабинет', path: '/admin/hr', icon: UserCog, hasSubmenu: true },
-  { name: 'Отчёты', path: '/admin/reports', icon: BarChart3, hasSubmenu: true },
+  { name: 'Restoranlar', path: '/admin', icon: Building2 },
+  { name: 'Xodimlar', path: '/admin/staff', icon: Users },
+  { name: 'Mijozlar', path: '/admin/customers', icon: UserSquare2 },
+  { name: 'Obuna', path: '/admin/subscription', icon: CreditCard },
+  { name: 'HR Kabinet', path: '/admin/hr', icon: UserCog, hasSubmenu: true },
+  { name: 'Hisobotlar', path: '/admin/reports', icon: BarChart3, hasSubmenu: true },
 ];
 
 const cashierLinks = [
@@ -71,15 +71,15 @@ export const Sidebar = ({ role }: SidebarProps) => {
                       <ChevronRight className={`w-4 h-4 opacity-50 ${isActive ? 'rotate-90' : ''}`} />
                     )}
                   </Link>
-                  {link.hasSubmenu && isActive && link.name === 'Отчёты' && (
+                  {link.hasSubmenu && isActive && link.name === 'Hisobotlar' && (
                     <div className="ml-4 pl-4 border-l border-white/10 mt-1 space-y-1">
-                      <Link to="/admin/reports" className="block px-3 py-2 text-sm text-white font-medium bg-white/10 rounded-lg">Продажи</Link>
-                      <Link to="/admin/reports/cancels" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Отказы</Link>
-                      <Link to="/admin/reports/safes" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Сейфы</Link>
-                      <Link to="/admin/reports/accounts" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Счета</Link>
-                      <Link to="/admin/reports/reservations" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Бронирования</Link>
-                      <Link to="/admin/reports/vat" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">НДС</Link>
-                      <Link to="/admin/reports/capital" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Капитал</Link>
+                      <Link to="/admin/reports" className="block px-3 py-2 text-sm text-white font-medium bg-white/10 rounded-lg">Sotuvlar</Link>
+                      <Link to="/admin/reports/cancels" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Otmenlar</Link>
+                      <Link to="/admin/reports/safes" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Seyflar</Link>
+                      <Link to="/admin/reports/accounts" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Hisoblar</Link>
+                      <Link to="/admin/reports/reservations" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Bronlar</Link>
+                      <Link to="/admin/reports/vat" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">QQS</Link>
+                      <Link to="/admin/reports/capital" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Kapital</Link>
                     </div>
                   )}
                 </div>
