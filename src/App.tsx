@@ -26,8 +26,10 @@ import { TablesManagement } from './pages/admin/TablesManagement';
 import { QRMenu } from './pages/admin/QRMenu';
 import { Invoices } from './pages/admin/Invoices';
 import { Purchases } from './pages/admin/Purchases';
-import { Fiscalization } from './pages/admin/Fiscalization';
 import { PlaceholderPage } from './pages/cashier/PlaceholderPage';
+import { CashierTables } from './pages/cashier/CashierTables';
+import { Customers } from './pages/cashier/Customers';
+import { Reservations } from './pages/cashier/Reservations';
 import { ChefHat, Calendar, Users, BookOpen, Grid } from 'lucide-react';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
@@ -135,12 +137,12 @@ function App() {
 
               {/* Cashier Routes */}
               <Route path="/cashier" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/cashier/tables" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><PlaceholderPage title="Zallar" icon={Grid} /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/cashier/kitchen" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><PlaceholderPage title="Oshxona" icon={ChefHat} /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/cashier/reservations" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><PlaceholderPage title="Bronlar" icon={Calendar} /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/cashier/customers" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><PlaceholderPage title="Mijozlar" icon={Users} /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/tables" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierTables /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/kitchen" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><KDS department="all" /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/reservations" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><Reservations /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/customers" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><Customers /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/finance" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/cashier/menu" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><PlaceholderPage title="Taomlar" icon={BookOpen} /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/menu" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/settings" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><Settings /></DashboardLayout></ProtectedRoute>} />
               
               {/* Other legacy cashier routes */}

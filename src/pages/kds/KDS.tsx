@@ -3,8 +3,9 @@ import { useStore } from '../../store/useStore';
 import { ChefHat, Flame, CheckCircle, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export const KDS = () => {
-  const { department } = useParams<{ department: string }>(); // 'kitchen' or 'shashlik'
+export const KDS = ({ department: propDepartment }: { department?: string }) => {
+  const params = useParams<{ department: string }>(); 
+  const department = propDepartment || params.department; // 'kitchen' or 'shashlik'
   const { orders, menuItems, categories, tables, employees } = useStore();
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
