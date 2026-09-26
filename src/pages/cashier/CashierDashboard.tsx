@@ -110,9 +110,16 @@ export const CashierDashboard = () => {
                 <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
-                <div className="text-base font-medium tracking-tight opacity-90 leading-tight">
-                  {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
-                  {order.items.length > 3 ? '...' : ''}
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {order.items.map((i: any, index: number) => {
+                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                    return (
+                      <div key={index} className="flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium">
+                        <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                        <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
@@ -135,7 +142,7 @@ export const CashierDashboard = () => {
                   </button>
                   <div className="flex gap-2 w-full mt-1">
                     <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Chek</button>
-                    <button onClick={(e) => { e.stopPropagation(); updateOrderStatus(order.id, 'cancelled'); }} className="flex-1 bg-red-500/20 text-red-200 py-2 rounded-xl text-sm font-bold hover:bg-red-500/40 transition-colors">Bekor</button>
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Ko'rish</button>
                   </div>
                 </div>
               </div>
@@ -155,9 +162,16 @@ export const CashierDashboard = () => {
                 <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
-                <div className="text-base font-medium tracking-tight opacity-70 leading-tight">
-                  {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
-                  {order.items.length > 3 ? '...' : ''}
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {order.items.map((i: any, index: number) => {
+                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                    return (
+                      <div key={index} className="flex justify-between items-center bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium opacity-80">
+                        <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                        <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
@@ -189,9 +203,16 @@ export const CashierDashboard = () => {
                   <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                     <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                   </div>
-                  <div className="text-base font-medium tracking-tight leading-tight">
-                    {order.items.slice(0, 3).map((i: any) => menuItems.find(m => m.id === i.menuItemId)?.name).join(', ')}
-                    {order.items.length > 3 ? '...' : ''}
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    {order.items.map((i: any, index: number) => {
+                      const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                      return (
+                        <div key={index} className="flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium">
+                          <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                          <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 text-amber-200">
