@@ -9,8 +9,8 @@ export const TablesManagement = () => {
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   
   const [formData, setFormData] = useState({
-    name: '',
-    capacity: 4,
+    number: 1,
+    seats: 4,
     status: 'available' as 'available' | 'occupied' | 'reserved'
   });
 
@@ -23,12 +23,12 @@ export const TablesManagement = () => {
     }
     setIsModalOpen(false);
     setEditingTable(null);
-    setFormData({ name: '', capacity: 4, status: 'available' });
+    setFormData({ number: 1, seats: 4, status: 'available' });
   };
 
   const openEditModal = (table: Table) => {
     setEditingTable(table);
-    setFormData({ name: table.name, capacity: table.capacity, status: table.status });
+    setFormData({ number: table.number, seats: table.seats, status: table.status });
     setIsModalOpen(true);
   };
 
@@ -47,7 +47,7 @@ export const TablesManagement = () => {
         <button 
           onClick={() => {
             setEditingTable(null);
-            setFormData({ name: '', capacity: 4, status: 'available' });
+            setFormData({ number: 1, seats: 4, status: 'available' });
             setIsModalOpen(true);
           }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors"
@@ -61,8 +61,8 @@ export const TablesManagement = () => {
           <div key={table.id} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 relative group overflow-hidden">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{table.name}</h3>
-                <p className="text-slate-500 text-sm mt-1">{table.capacity} kishilik</p>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Stol {table.number}</h3>
+                <p className="text-slate-500 text-sm mt-1">{table.seats} kishilik</p>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
                 table.status === 'available' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -99,11 +99,12 @@ export const TablesManagement = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stol raqami/nomi</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stol raqami</label>
                 <input 
-                  type="text" 
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  type="number" 
+                  min="1"
+                  value={formData.number}
+                  onChange={e => setFormData({...formData, number: parseInt(e.target.value) || 1})}
                   className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                   required
                 />
@@ -114,8 +115,8 @@ export const TablesManagement = () => {
                 <input 
                   type="number" 
                   min="1"
-                  value={formData.capacity}
-                  onChange={e => setFormData({...formData, capacity: parseInt(e.target.value) || 1})}
+                  value={formData.seats}
+                  onChange={e => setFormData({...formData, seats: parseInt(e.target.value) || 1})}
                   className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                   required
                 />
