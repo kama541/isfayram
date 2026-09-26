@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
-import { Printer, BookOpen, Power, ListX, X, Check } from 'lucide-react';
+import { Printer, BookOpen, Power, ListX, X, Check, Calculator } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
@@ -12,6 +12,7 @@ export const CashierDashboard = () => {
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
   const [showStopList, setShowStopList] = useState(false);
+  const [showShiftReport, setShowShiftReport] = useState(false);
 
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -29,6 +30,10 @@ export const CashierDashboard = () => {
   const pendingOrders = orders.filter(o => o.status !== 'paid' && o.status !== 'cancelled');
   const paidToday = orders.filter(o => o.status === 'paid' && new Date(o.updatedAt || o.createdAt).toDateString() === new Date().toDateString());
   const cancelledOrders = orders.filter(o => o.status === 'cancelled' && new Date(o.createdAt).toDateString() === new Date().toDateString());
+
+  const cashTotal = paidToday.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + o.totalAmount, 0);
+  const cardTotal = paidToday.filter(o => o.paymentMethod === 'card').reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalRevenue = cashTotal + cardTotal;
 
   return (
     <div className="p-8 space-y-8">
@@ -68,6 +73,14 @@ export const CashierDashboard = () => {
           >
             <ListX className="w-5 h-5" />
             Stop-list
+          </button>
+          
+          <button 
+            onClick={() => setShowShiftReport(true)}
+            className="bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-5 py-2.5 rounded-xl font-bold hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors flex items-center gap-2"
+          >
+            <Calculator className="w-5 h-5" />
+            Z-otchyot
           </button>
 
           <Link 
@@ -224,7 +237,16 @@ export const CashierDashboard = () => {
                        {order.paymentMethod && <span className="ml-2 font-semibold text-slate-400 dark:text-slate-500">• {order.paymentMethod === 'cash' ? 'Naqd' : 'Karta'}</span>}
                      </p>
                    </div>
-                   <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(order.totalAmount)}</span>
+                   <div className="flex items-center gap-3">
+                     <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(order.totalAmount)}</span>
+                     <button 
+                       onClick={() => handlePrint(order)}
+                       className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 rounded-xl transition-colors"
+                       title="Chekni qayta chiqarish"
+                     >
+                       <Printer className="w-4 h-4" />
+                     </button>
+                   </div>
                  </div>
               ))}
               {paidToday.length === 0 && (
@@ -288,6 +310,50 @@ export const CashierDashboard = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showShiftReport && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <Calculator className="w-6 h-6 text-purple-500" />
+                Smena Hisoboti
+              </h2>
+              <button 
+                onClick={() => setShowShiftReport(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 rounded-xl"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Naqd pul orqali:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">{formatCurrency(cashTotal)}</span>
+                </div>
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Plastik karta orqali:</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{formatCurrency(cardTotal)}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Jami tushum:</span>
+                  <span className="font-bold text-purple-600 dark:text-purple-400 text-2xl">{formatCurrency(totalRevenue)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  window.print();
+                }}
+                className="w-full mt-8 bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Printer className="w-5 h-5" /> Chop etish
+              </button>
             </div>
           </div>
         </div>
