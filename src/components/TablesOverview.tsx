@@ -13,14 +13,13 @@ export const TablesOverview = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4 mb-4 border-b border-slate-200 dark:border-slate-700 pb-4">
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-          <UtensilsCrossed className="w-4 h-4" />
-          Ochiq stollar
-        </button>
+      <div className="flex items-center gap-3 bg-slate-800 dark:bg-slate-900 w-max text-white rounded-2xl px-4 py-2.5 text-sm font-medium shadow-sm">
+        <span className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#33CC80]"></div> Bo'sh</span>
+        <span className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#3399FF]"></div> Band</span>
+        <span className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#FF9933]"></div> Bron qilingan</span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {tables.map(table => {
           const activeOrder = orders.find(o => o.tableId === table.id && o.status !== 'paid' && o.status !== 'cancelled');
           const computedStatus = activeOrder ? 'occupied' : table.status;
@@ -28,34 +27,35 @@ export const TablesOverview = () => {
           let waiterName = null;
           if (computedStatus === 'occupied' && activeOrder && activeOrder.waiterId) {
             const waiter = employees.find(e => e.id === activeOrder.waiterId);
-            waiterName = waiter ? waiter.fullName : null;
+            waiterName = waiter ? waiter.name : null;
           }
 
           return (
             <div
               key={table.id}
               onClick={() => handleTableClick(table.id)}
-              className={`p-4 rounded-xl transition-all hover:opacity-90 cursor-pointer relative flex flex-col gap-2 ${
-                  computedStatus === 'occupied' 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+              className={`aspect-[4/3] rounded-2xl transition-all hover:scale-[1.03] hover:shadow-lg cursor-pointer flex flex-col items-center justify-center text-center p-3 shadow-md
+                  ${computedStatus === 'occupied' 
+                    ? 'bg-[#3399FF] text-white shadow-[#3399FF]/30' 
                     : computedStatus === 'available'
-                      ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-2 border-dashed border-blue-200 dark:border-blue-500/30 shadow-sm'
-                      : 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-300'
-                }`}
+                      ? 'bg-[#33CC80] text-white shadow-[#33CC80]/30'
+                      : 'bg-[#FF9933] text-white shadow-[#FF9933]/30'
+                  }`}
             >
-              <div className="flex justify-between items-center text-sm font-medium opacity-90">
-                <span>{table.number} {waiterName ? `- ${waiterName}` : ''}</span>
-              </div>
+              <div className="text-2xl lg:text-3xl font-black tracking-tight leading-none mb-1">{table.number}</div>
               
-              <div className="text-xl font-bold">
-                {computedStatus === 'occupied' ? 'Band' : computedStatus === 'available' ? 'Bo\'sh' : 'Band qilingan'}
-              </div>
-              
-              <div className="flex items-center gap-4 text-xs font-medium opacity-80 mt-1">
-                <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-md">
-                   {computedStatus === 'occupied' ? 'Xizmatda' : 'Kutish'}
-                </div>
-              </div>
+              {computedStatus === 'occupied' ? (
+                <>
+                  <div className="flex gap-1 items-center mt-1 text-white/90">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                  </div>
+                  <div className="text-[13px] font-bold mt-1 tracking-tight">{activeOrder?.totalAmount?.toLocaleString('uz-UZ')} sum</div>
+                  {waiterName && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiterName}</div>}
+                </>
+              ) : (
+                <div className="text-sm font-medium opacity-90 mt-2">{table.seats}</div>
+              )}
             </div>
           );
         })}
@@ -66,21 +66,15 @@ export const TablesOverview = () => {
             <div
               key={order.id}
               onClick={() => navigate(`/${window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter'}/new-order?table=takeaway&order=${order.id}`)}
-              className="p-4 rounded-xl transition-all hover:opacity-90 cursor-pointer relative flex flex-col gap-2 bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              className="aspect-[4/3] rounded-2xl transition-all hover:scale-[1.03] hover:shadow-lg cursor-pointer flex flex-col items-center justify-center text-center p-3 shadow-md bg-amber-500 text-white shadow-amber-500/30"
             >
-              <div className="flex justify-between items-center text-sm font-medium opacity-90">
-                <span>S-oboy {waiter ? `- ${waiter.fullName}` : ''}</span>
+              <div className="text-lg lg:text-xl font-black tracking-tight leading-none mb-1">S-oboy</div>
+              <div className="flex gap-1 items-center mt-1 text-white/90">
+                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               </div>
-              
-              <div className="text-xl font-bold">
-                Olib ketish
-              </div>
-              
-              <div className="flex items-center gap-4 text-xs font-medium opacity-80 mt-1">
-                <div className="flex items-center gap-1 bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-md">
-                   S-oboy
-                </div>
-              </div>
+              <div className="text-[13px] font-bold mt-1 tracking-tight">{order.totalAmount?.toLocaleString('uz-UZ')} sum</div>
+              {waiter && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiter.name}</div>}
             </div>
           );
         })}
