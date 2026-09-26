@@ -2,12 +2,45 @@ import { useState } from 'react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency } from '../../utils/format';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import type { MenuItem } from '../../types';
 
 export const MenuManagement = () => {
-  const { menuItems, categories, deleteMenuItem } = useStore();
+  const { menuItems, categories, deleteMenuItem, addMenuItem } = useStore();
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newItem, setNewItem] = useState<Partial<MenuItem>>({
+    name: '',
+    description: '',
+    price: 0,
+    categoryId: categories[0]?.id || '',
+    isAvailable: true,
+  });
 
   const filteredItems = activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems;
+
+  const handleAddItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newItem.name || !newItem.categoryId || !newItem.price) return;
+    
+    await addMenuItem({
+      id: crypto.randomUUID(),
+      name: newItem.name,
+      description: newItem.description || '',
+      price: Number(newItem.price),
+      categoryId: newItem.categoryId,
+      isAvailable: newItem.isAvailable ?? true,
+      image: '',
+    });
+    
+    setIsModalOpen(false);
+    setNewItem({
+      name: '',
+      description: '',
+      price: 0,
+      categoryId: categories[0]?.id || '',
+      isAvailable: true,
+    });
+  };
 
   return (
     <div className="p-8 space-y-8">
@@ -16,7 +49,10 @@ export const MenuManagement = () => {
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Menyu Boshqaruvi</h1>
           <p className="text-slate-500 text-sm mt-1">Taomlar va toifalar ro'yxati</p>
         </div>
-        <button className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm shadow-blue-600/20">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm shadow-blue-600/20"
+        >
           <Plus className="w-4 h-4" /> Yangi Taom
         </button>
       </div>
@@ -77,6 +113,67 @@ export const MenuManagement = () => {
           </div>
         ))}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Yangi taom qo'shish</h2>
+            <form onSubmit={handleAddItem} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Taom nomi</label>
+                <input 
+                  type="text" 
+                  value={newItem.name} 
+                  onChange={e => setNewItem({...newItem, name: e.target.value})} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Toifa</label>
+                <select 
+                  value={newItem.categoryId} 
+                  onChange={e => setNewItem({...newItem, categoryId: e.target.value})} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                  required
+                >
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Narxi (so'm)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={newItem.price || ''} 
+                  onChange={e => setNewItem({...newItem, price: Number(e.target.value)})} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tarkibi / Ta'rifi</label>
+                <textarea 
+                  value={newItem.description} 
+                  onChange={e => setNewItem({...newItem, description: e.target.value})} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                  Bekor qilish
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                  Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
