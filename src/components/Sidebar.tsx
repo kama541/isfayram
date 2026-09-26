@@ -21,7 +21,6 @@ const adminLinks = [
 
 const cashierLinks = [
   { name: 'Buyurtmalar', path: '/cashier', icon: ClipboardList },
-  { name: 'Zallar', path: '/cashier/tables', icon: Grid },
   { name: 'Oshxona', path: '/cashier/kitchen', icon: ChefHat },
   { name: 'Bronlar', path: '/cashier/reservations', icon: Calendar },
   { name: 'Mijozlar', path: '/cashier/customers', icon: Users },
