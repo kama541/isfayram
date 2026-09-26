@@ -1,9 +1,6 @@
 import { Search, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
-import { useStore } from '../../store/useStore';
-import { formatCurrency } from '../../utils/format';
 
 export const Reports = () => {
-  const { menuItems, categories } = useStore();
 
   return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">

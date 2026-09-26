@@ -1,8 +1,6 @@
-import { Search, ChevronDown } from 'lucide-react';
-import { useStore } from '../../store/useStore';
+import { Search } from 'lucide-react';
 
 export const StaffManagement = () => {
-  const { employees } = useStore();
 
   return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">

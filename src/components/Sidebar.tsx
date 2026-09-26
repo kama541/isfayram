@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Users, UserSquare2, CreditCard, UserCog, BarChart3, ChevronRight, ChevronDown, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart } from 'lucide-react';
+import { Building2, Users, UserSquare2, CreditCard, UserCog, BarChart3, ChevronRight, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
