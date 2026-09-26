@@ -22,7 +22,12 @@ export const NewOrder = () => {
   // Check if this table has an active order
   const activeOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'paid' && o.status !== 'cancelled') : null;
 
-
+  React.useEffect(() => {
+    if (activeOrder && currentUser?.role === 'waiter' && !localStorage.getItem('adminUser') && activeOrder.waiterId !== currentUser.id) {
+      alert("Siz bu buyurtmaga kirolmaysiz. U boshqa ofitsiantga tegishli!");
+      navigate('/waiter');
+    }
+  }, [activeOrder, currentUser, navigate]);
   const popularItems = React.useMemo(() => {
     const counts: Record<string, number> = {};
     orders.forEach(o => {

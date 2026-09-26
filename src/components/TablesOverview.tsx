@@ -11,6 +11,11 @@ export const TablesOverview = () => {
   const isCashierOrAdmin = currentUser?.role === 'cashier' || localStorage.getItem('adminUser');
 
   const handleTableClick = (tableId: string) => {
+    const activeOrder = orders.find(o => o.tableId === tableId && o.status !== 'paid' && o.status !== 'cancelled');
+    if (activeOrder && !isCashierOrAdmin && activeOrder.waiterId !== currentUser?.id) {
+      alert("Bu stolda boshqa ofitsiantning buyurtmasi bor!");
+      return;
+    }
     const rootRole = window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter';
     navigate(`/${rootRole}/new-order?table=${tableId}`);
   };
@@ -70,7 +75,13 @@ export const TablesOverview = () => {
           return (
             <div
               key={order.id}
-              onClick={() => navigate(`/${window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter'}/new-order?table=takeaway&order=${order.id}`)}
+              onClick={() => {
+                if (!isCashierOrAdmin && order.waiterId !== currentUser?.id) {
+                  alert("Bu buyurtmani boshqa ofitsiant olgan!");
+                  return;
+                }
+                navigate(`/${window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter'}/new-order?table=takeaway&order=${order.id}`)
+              }}
               className="aspect-[4/3] rounded-2xl transition-all hover:scale-[1.03] hover:shadow-lg cursor-pointer flex flex-col items-center justify-center text-center p-3 shadow-md bg-amber-500 text-white shadow-amber-500/30"
             >
               <div className="text-lg lg:text-xl font-black tracking-tight leading-none mb-1">S-oboy</div>
