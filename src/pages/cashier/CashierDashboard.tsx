@@ -1,6 +1,6 @@
-import { CheckCircle, Clock, CreditCard } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCurrency } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
@@ -8,7 +8,7 @@ import { Printer, BookOpen, Power, ListX, X, Check, Calculator } from 'lucide-re
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
-  const { orders, tables, updateOrderStatus, updateOrderTable, isSystemOpen, setSystemOpen, menuItems, updateMenuItemAvailability } = useStore();
+  const { orders, tables, updateOrderStatus, isSystemOpen, setSystemOpen, menuItems, updateMenuItemAvailability } = useStore();
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
   const [showStopList, setShowStopList] = useState(false);
@@ -103,7 +103,7 @@ export const CashierDashboard = () => {
             return (
               <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => handlePrint(order)}>
                 <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                  <span>№{order.id.slice(-4)} • {waiter ? waiter.name.toUpperCase() : 'KASSIR'}</span>
+                  <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
                 <div className="text-[26px] font-bold tracking-tight">
                   {order.totalAmount.toLocaleString('uz-UZ')} sum
@@ -145,7 +145,7 @@ export const CashierDashboard = () => {
             return (
               <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3">
                 <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
-                  <span>№{order.id.slice(-4)} • {waiter ? waiter.name.toUpperCase() : 'KASSIR'}</span>
+                  <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
                 <div className="text-[26px] font-bold tracking-tight opacity-70 line-through">
                   {order.totalAmount.toLocaleString('uz-UZ')} sum
@@ -178,7 +178,7 @@ export const CashierDashboard = () => {
               return (
                 <div key={order.id} className="bg-[#2e7d32] text-white p-5 rounded-3xl shadow-sm flex flex-col gap-3 group relative cursor-pointer" onClick={() => handlePrint(order)}>
                   <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                    <span>№{order.id.slice(-4)} • {waiter ? waiter.name.toUpperCase() : 'KASSIR'}</span>
+                    <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                   </div>
                   <div className="text-[26px] font-bold tracking-tight">
                     {order.totalAmount.toLocaleString('uz-UZ')} sum

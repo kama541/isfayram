@@ -1,4 +1,4 @@
-import { UtensilsCrossed } from 'lucide-react';
+
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,7 +27,7 @@ export const TablesOverview = () => {
           let waiterName = null;
           if (computedStatus === 'occupied' && activeOrder && activeOrder.waiterId) {
             const waiter = employees.find(e => e.id === activeOrder.waiterId);
-            waiterName = waiter ? waiter.name : null;
+            waiterName = waiter ? waiter.fullName : null;
           }
 
           return (
@@ -74,7 +74,7 @@ export const TablesOverview = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               </div>
               <div className="text-[13px] font-bold mt-1 tracking-tight">{order.totalAmount?.toLocaleString('uz-UZ')} sum</div>
-              {waiter && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiter.name}</div>}
+              {waiter && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiter.fullName}</div>}
             </div>
           );
         })}
