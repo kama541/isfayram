@@ -20,14 +20,6 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         {/* Top Header */}
         <header className="h-20 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 z-10 shrink-0 shadow-sm transition-colors duration-200">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative w-96 hidden md:block">
-              <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-              <input 
-                type="text" 
-                placeholder="Qidirish..." 
-                className="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-              />
-            </div>
           </div>
           <div className="flex items-center gap-6">
             <div className="hidden lg:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
