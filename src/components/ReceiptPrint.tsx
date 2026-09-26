@@ -21,7 +21,7 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
   return (
     <div ref={ref} className="hidden print:block bg-white text-black p-4 w-[80mm] mx-auto text-sm font-mono">
       <div className="text-center mb-6 border-b-2 border-black pb-4 border-dashed">
-        <h2 className="text-xl font-bold mb-1">ISFARYAM</h2>
+        <img src="/logo.png" alt="ISFARYAM" className="w-32 mx-auto mb-3 grayscale" />
         <p className="text-xs">Chipta/Chek №: {order.id.slice(0, 8)}</p>
         <p className="text-xs">Sana: {new Date(order.createdAt).toLocaleString('uz-UZ')}</p>
         <p className="text-xs">Stol: {order.tableId.replace('t', '')}</p>

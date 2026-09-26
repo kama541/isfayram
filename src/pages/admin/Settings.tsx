@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { User as UserIcon, LogOut, Power } from 'lucide-react';
+import { User as UserIcon, LogOut, Power, Moon, Sun } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import type { Role } from '../../types';
 
@@ -9,7 +9,7 @@ interface SettingsProps {
 
 export const Settings = ({ role = 'admin' }: SettingsProps) => {
   const navigate = useNavigate();
-  const { isSystemOpen, setSystemOpen } = useStore();
+  const { isSystemOpen, setSystemOpen, theme, setTheme } = useStore();
 
   const handleToggleSystem = () => {
     if (window.confirm(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi. Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?")) {
@@ -41,6 +41,28 @@ export const Settings = ({ role = 'admin' }: SettingsProps) => {
             <LogOut className="w-4 h-4" />
             Chiqish
           </button>
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4 text-slate-800 dark:text-white">Tashqi Ko'rinish</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                {theme === 'dark' ? <Moon className="w-6 h-6" /> : <Sun className="w-6 h-6" />}
+              </div>
+              <div>
+                <p className="text-base font-bold text-slate-900 dark:text-white">Mavzu (Tema)</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Tungi yoki kunduzgi rejimni tanlang</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm"
+            >
+              {theme === 'dark' ? 'Kunduzgi' : 'Tungi'}
+            </button>
+          </div>
         </div>
 
         {role === 'admin' && (
