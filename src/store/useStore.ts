@@ -34,6 +34,9 @@ interface StoreState {
   updateMenuItemAvailability: (id: string, isAvailable: boolean) => Promise<void>;
   deleteMenuItem: (id: string) => void;
   
+  addTable: (table: Omit<Table, 'id'>) => Promise<void>;
+  updateTable: (table: Table) => Promise<void>;
+  deleteTable: (id: string) => Promise<void>;
   updateTableStatus: (id: string, status: Table['status']) => void;
   
   createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -428,6 +431,29 @@ export const useStore = create<StoreState>((set, get) => ({
 
   deleteMenuItem: async (id) => {
     await supabase.from('menu_items').delete().eq('id', id);
+    get().silentFetch();
+  },
+
+  addTable: async (table) => {
+    await supabase.from('tables').insert({
+      name: table.name,
+      capacity: table.capacity,
+      status: table.status || 'available'
+    });
+    get().silentFetch();
+  },
+
+  updateTable: async (table) => {
+    await supabase.from('tables').update({
+      name: table.name,
+      capacity: table.capacity,
+      status: table.status
+    }).eq('id', table.id);
+    get().silentFetch();
+  },
+
+  deleteTable: async (id) => {
+    await supabase.from('tables').delete().eq('id', id);
     get().silentFetch();
   },
 
