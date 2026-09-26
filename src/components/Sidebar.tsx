@@ -30,9 +30,9 @@ const cashierLinks = [
 ];
 
 const waiterLinks = [
-  { name: 'Dashboard', path: '/waiter', icon: LayoutDashboard },
+  { name: 'Stollar', path: '/waiter', icon: Grid },
   { name: 'Yangi Buyurtma', path: '/waiter/new-order', icon: ShoppingCart },
-  { name: 'Stollar', path: '/waiter/tables', icon: UtensilsCrossed },
+  { name: 'Taomlar', path: '/waiter/menu', icon: BookOpen },
 ];
 
 export const Sidebar = ({ role }: SidebarProps) => {

@@ -148,10 +148,9 @@ function App() {
               <Route path="/cashier/orders" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/new-order" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><NewOrder /></DashboardLayout></ProtectedRoute>} />
 
-              {/* Waiter Routes */}
               <Route path="/waiter" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout></ProtectedRoute>} />
               <Route path="/waiter/new-order" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><NewOrder /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/waiter/tables" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/waiter/menu" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
 
               {/* Customer QR Routes */}
               <Route path="/menu/:tableId" element={<CustomerMenu />} />
