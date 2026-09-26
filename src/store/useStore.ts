@@ -619,6 +619,11 @@ export const useStore = create<StoreState>((set, get) => ({
     if (order) {
       const newTotal = order.total_amount - itemTotal;
       await supabase.from('orders').update({ total_amount: newTotal }).eq('id', orderId);
+      
+      const { data: remainingItems } = await supabase.from('order_items').select('id').eq('order_id', orderId);
+      if (remainingItems && remainingItems.length === 0) {
+        get().updateOrderStatus(orderId, 'cancelled');
+      }
     }
     get().silentFetch();
   },

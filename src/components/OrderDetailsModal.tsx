@@ -70,16 +70,32 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
-          <div className="text-2xl font-bold text-slate-800 dark:text-white">
-            Jami: {formatCurrency(order.totalAmount)}
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div className="text-2xl font-bold text-slate-800 dark:text-white">
+              Jami: {formatCurrency(order.totalAmount)}
+            </div>
+            <button 
+              onClick={() => { onClose(); onPrint(); }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold transition-colors"
+            >
+              <Printer className="w-5 h-5" /> Chek chiqarish
+            </button>
           </div>
-          <button 
-            onClick={() => { onClose(); onPrint(); }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold transition-colors"
-          >
-            <Printer className="w-5 h-5" /> Chek chiqarish
-          </button>
+          
+          {order.status !== 'cancelled' && order.status !== 'paid' && (
+            <button 
+              onClick={() => {
+                if (window.confirm('Haqiqatan ham butun buyurtmani bekor qilmoqchimisiz?')) {
+                  useStore.getState().updateOrderStatus(order.id, 'cancelled');
+                  onClose();
+                }
+              }}
+              className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 py-3 rounded-xl font-bold transition-colors text-center border border-red-200 dark:border-red-900/50"
+            >
+              Butun buyurtmani bekor qilish (Otmen)
+            </button>
+          )}
         </div>
       </div>
     </div>
