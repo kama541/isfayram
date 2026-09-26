@@ -37,6 +37,7 @@ interface StoreState {
   
   createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
   addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<void>;
+  updateOrderTable: (orderId: string, newTableId: string) => Promise<void>;
   updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card') => void;
   
   createWaiterCall: (tableId: string) => void;
@@ -533,6 +534,23 @@ export const useStore = create<StoreState>((set, get) => ({
     get().silentFetch();
   },
 
+  updateOrderTable: async (orderId, newTableId) => {
+    // Revert old table status if needed
+    const order = get().orders.find(o => o.id === orderId);
+    if (order && order.tableId !== 'takeaway' && order.tableId !== newTableId) {
+      await supabase.from('tables').update({ status: 'available' }).eq('id', order.tableId);
+    }
+    
+    // Update order
+    await supabase.from('orders').update({ table_id: newTableId, updated_at: new Date().toISOString() }).eq('id', orderId);
+    
+    // Update new table status
+    if (newTableId !== 'takeaway') {
+      await supabase.from('tables').update({ status: 'occupied' }).eq('id', newTableId);
+    }
+    
+    get().silentFetch();
+  },
   
   updateOrderStatus: async (id, status, paymentMethod) => {
     const updateData: any = { status, updated_at: new Date().toISOString() };

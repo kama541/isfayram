@@ -114,9 +114,6 @@ export const NewOrder = () => {
                   !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'
                 }`}
               >
-                <div className="h-36 bg-slate-100 dark:bg-slate-900 overflow-hidden">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                </div>
                 <div className="p-4">
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
                   <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>

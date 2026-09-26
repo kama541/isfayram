@@ -8,7 +8,7 @@ import { Printer, BookOpen, Power } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 export const CashierDashboard = () => {
-  const { orders, tables, updateOrderStatus, isSystemOpen, setSystemOpen } = useStore();
+  const { orders, tables, updateOrderStatus, updateOrderTable, isSystemOpen, setSystemOpen } = useStore();
   const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
 
@@ -83,7 +83,20 @@ export const CashierDashboard = () => {
                     <CreditCard className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">{getTableNumber(order.tableId)}</h3>
+                    <select
+                      value={order.tableId || 'takeaway'}
+                      onChange={(e) => {
+                        if (window.confirm("Rostdan ham stolni o'zgartirmoqchimisiz?")) {
+                          updateOrderTable(order.id, e.target.value);
+                        }
+                      }}
+                      className="font-bold text-lg text-slate-800 dark:text-white bg-transparent border-none outline-none cursor-pointer focus:ring-0 p-0 appearance-none hover:text-blue-600 transition-colors"
+                    >
+                      <option value="takeaway">S-oboy (Olib ketish)</option>
+                      {tables.map(t => (
+                        <option key={t.id} value={t.id}>{t.number}</option>
+                      ))}
+                    </select>
                     <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400 mt-1">
                       <span>{formatDate(order.createdAt)}</span>
                       <span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400"></span>

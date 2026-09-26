@@ -117,9 +117,6 @@ export const CustomerMenu = () => {
       <main className="p-4 space-y-4 max-w-md mx-auto">
         {filteredItems.map(item => (
           <div key={item.id} className={`bg-white rounded-3xl overflow-hidden shadow-sm border flex flex-col transition-all ${!item.isAvailable ? 'opacity-60 grayscale' : 'border-slate-100 hover:shadow-md'}`}>
-            <div className="relative h-48 w-full overflow-hidden bg-slate-100">
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-            </div>
             <div className="p-5 flex-1 flex flex-col justify-between">
               <div>
                 <h3 className="font-bold text-lg text-slate-800 leading-tight tracking-tight">{item.name}</h3>
