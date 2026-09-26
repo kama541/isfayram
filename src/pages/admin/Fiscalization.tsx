@@ -1,4 +1,4 @@
-import { Receipt, RefreshCw, Download, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { Receipt, RefreshCw, Download, CheckCircle2 } from 'lucide-react';
 
 export const Fiscalization = () => {
   return (
