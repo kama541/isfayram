@@ -17,9 +17,12 @@ interface StoreState {
   notebookEntries: NotebookEntry[];
   isLoading: boolean;
   isRealtimeInitialized: boolean;
+  isSystemOpen: boolean;
+  theme: 'light' | 'dark';
   
   // Actions
   fetchInitialData: () => Promise<void>;
+  silentFetch: () => Promise<void>;
   initRealtime: () => void;
   
   addCategory: (category: Category) => void;
@@ -56,6 +59,10 @@ interface StoreState {
   // Notebook actions
   addNotebookEntry: (entry: Omit<NotebookEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateNotebookEntryStatus: (id: string, status: NotebookEntry['status']) => Promise<void>;
+
+  // System actions
+  setSystemOpen: (isOpen: boolean) => Promise<void>;
+  setTheme: (theme: 'light' | 'dark') => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -73,6 +80,8 @@ export const useStore = create<StoreState>((set, get) => ({
   notebookEntries: [],
   isLoading: true,
   isRealtimeInitialized: false,
+  isSystemOpen: true,
+  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
 
   initRealtime: () => {
     if (get().isRealtimeInitialized) return;
@@ -80,19 +89,22 @@ export const useStore = create<StoreState>((set, get) => ({
     
     supabase.channel('public:orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-         get().fetchInitialData();
+         get().silentFetch();
       }).subscribe();
       
     supabase.channel('public:waiter_calls')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_calls' }, () => {
-         get().fetchInitialData();
+         get().silentFetch();
       }).subscribe();
+
+    // Polling as fallback (60 seconds instead of 10s to prevent site slowdown)
+    setInterval(() => {
+      get().silentFetch();
+    }, 60000);
   },
 
-  fetchInitialData: async () => {
+  silentFetch: async () => {
     try {
-      set({ isLoading: true });
-      
       const [
         { data: profilesData },
         { data: categoriesData },
@@ -120,7 +132,101 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('inventory_items').select('*'),
         supabase.from('recipe_ingredients').select('*'),
         supabase.from('inventory_transactions').select('*').order('created_at', { ascending: false }),
-        supabase.from('notebook_entries').select('*').order('created_at', { ascending: false })
+        supabase.from('notebook_entries').select('*').order('created_at', { ascending: false }),
+        supabase.from('settings').select('*').eq('key', 'is_system_open').single(),
+        supabase.from('payments').select('*')
+      ]);
+
+      const users: User[] = (profilesData || []).map(p => ({ id: p.id, name: p.full_name, role: p.role }));
+      const categories: Category[] = (categoriesData || []).map(c => ({ id: c.id, name: c.name }));
+      const menuItems: MenuItem[] = (menuItemsData || []).map(m => ({
+        id: m.id, categoryId: m.category_id, name: m.name, description: m.description || '',
+        price: Number(m.price), image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500', isAvailable: m.is_available
+      }));
+      const tables: Table[] = (tablesData || []).map(t => ({
+        id: t.id, number: t.table_number, status: ['available', 'occupied', 'ordered', 'cleaning', 'closed'].includes(t.status) ? t.status as any : 'available', seats: t.capacity
+      }));
+      const orders: Order[] = (ordersData || []).map(o => {
+        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id).map(oi => ({
+          id: oi.id, menuItemId: oi.menu_item_id, quantity: oi.quantity, price: Number(oi.unit_price), notes: oi.special_instructions || ''
+        }));
+        
+        const payment = (paymentsData || []).find(p => p.order_id === o.id);
+        
+        return {
+          id: o.id, tableId: o.table_id || '', waiterId: o.waiter_id, status: o.status, items,
+          totalAmount: Number(o.total_amount), paymentMethod: payment ? payment.payment_method : undefined, createdAt: o.created_at, updatedAt: o.updated_at
+        };
+      });
+      const waiterCalls: WaiterCall[] = (callsData || []).map(c => ({
+        id: c.id, tableId: c.table_id || '', status: c.status === 'new' ? 'pending' : 'resolved', createdAt: c.created_at
+      }));
+      const employees: Employee[] = (employeesData || []).map(e => ({
+        id: e.id, fullName: e.full_name, role: e.role, pinCode: e.pin_code, isActive: e.is_active, createdAt: e.created_at
+      }));
+      const expenses: Expense[] = (expensesData || []).map(e => ({
+        id: e.id, category: e.category, amount: Number(e.amount), paymentDate: e.payment_date, description: e.description, paymentMethod: e.payment_method, createdAt: e.created_at
+      }));
+      const inventoryItems: InventoryItem[] = (inventoryItemsData || []).map(i => ({
+        id: i.id, name: i.name, unit: i.unit, currentStock: Number(i.current_stock), minStockLevel: Number(i.min_stock_level), purchasePrice: i.purchase_price ? Number(i.purchase_price) : undefined, supplier: i.supplier, createdAt: i.created_at, updatedAt: i.updated_at
+      }));
+      const recipeIngredients: RecipeIngredient[] = (recipeIngredientsData || []).map(r => ({
+        id: r.id, menuItemId: r.menu_item_id, inventoryItemId: r.inventory_item_id, quantity: Number(r.quantity), notes: r.notes
+      }));
+      const inventoryTransactions: InventoryTransaction[] = (inventoryTransactionsData || []).map(t => ({
+        id: t.id, itemId: t.item_id, transactionType: t.transaction_type, quantity: Number(t.quantity), referenceId: t.notes, createdAt: t.created_at
+      }));
+      const notebookEntries: NotebookEntry[] = (notebookEntriesData || []).map(n => ({
+        id: n.id, type: n.type, personName: n.person_name, amount: Number(n.amount), notes: n.notes, status: n.status, createdAt: n.created_at, updatedAt: n.updated_at
+      }));
+      
+      const isSystemOpen = settingsData ? settingsData.value === 'true' : true;
+
+      set({ 
+        users, categories, menuItems, tables, orders, waiterCalls, employees, expenses, 
+        inventoryItems, recipeIngredients, inventoryTransactions, notebookEntries, isSystemOpen
+      });
+    } catch (error) {
+      console.error('Error in silent fetch:', error);
+    }
+  },
+
+  fetchInitialData: async () => {
+    try {
+      set({ isLoading: true });
+      
+      const [
+        { data: profilesData },
+        { data: categoriesData },
+        { data: menuItemsData },
+        { data: tablesData },
+        { data: ordersData },
+        { data: orderItemsData },
+        { data: callsData },
+        { data: employeesData },
+        { data: expensesData },
+        { data: inventoryItemsData },
+        { data: recipeIngredientsData },
+        { data: inventoryTransactionsData },
+        { data: notebookEntriesData },
+        { data: settingsData },
+        { data: paymentsData }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*'),
+        supabase.from('menu_categories').select('*').order('sort_order'),
+        supabase.from('menu_items').select('*'),
+        supabase.from('tables').select('*'),
+        supabase.from('orders').select('*'),
+        supabase.from('order_items').select('*'),
+        supabase.from('waiter_calls').select('*'),
+        supabase.from('employees').select('*'),
+        supabase.from('expenses').select('*').order('payment_date', { ascending: false }),
+        supabase.from('inventory_items').select('*'),
+        supabase.from('recipe_ingredients').select('*'),
+        supabase.from('inventory_transactions').select('*').order('created_at', { ascending: false }),
+        supabase.from('notebook_entries').select('*').order('created_at', { ascending: false }),
+        supabase.from('settings').select('*').eq('key', 'is_system_open').single(),
+        supabase.from('payments').select('*')
       ]);
 
       const users: User[] = (profilesData || []).map(p => ({
@@ -160,6 +266,8 @@ export const useStore = create<StoreState>((set, get) => ({
           notes: oi.special_instructions || ''
         }));
         
+        const payment = (paymentsData || []).find(p => p.order_id === o.id);
+        
         return {
           id: o.id,
           tableId: o.table_id || '',
@@ -167,7 +275,7 @@ export const useStore = create<StoreState>((set, get) => ({
           status: o.status,
           items,
           totalAmount: Number(o.total_amount),
-          paymentMethod: o.payment_method,
+          paymentMethod: payment ? payment.payment_method : undefined,
           createdAt: o.created_at,
           updatedAt: o.updated_at
         };
@@ -239,14 +347,18 @@ export const useStore = create<StoreState>((set, get) => ({
         updatedAt: n.updated_at
       }));
 
+      const isSystemOpen = settingsData ? settingsData.value === 'true' : true;
+
       set({ 
         users, categories, menuItems, tables, orders, waiterCalls, employees, expenses, 
         inventoryItems, recipeIngredients, inventoryTransactions, notebookEntries,
+        isSystemOpen,
         isLoading: false 
       });
     } catch (error) {
       console.error('Error fetching data from Supabase:', error);
-      set({ isLoading: false });
+      // Faqatgina birinchi marta load bo'lganda false qilamiz, pollingda loading state'ni o'zgartirmaymiz
+      if (get().isLoading) set({ isLoading: false });
     }
   },
 
@@ -306,12 +418,17 @@ export const useStore = create<StoreState>((set, get) => ({
     }
 
     // Optimistic UI update could be placed here, but we will rely on DB for real id
-    const { data: orderResponse } = await supabase.from('orders').insert({
+    const { data: orderResponse, error: orderError } = await supabase.from('orders').insert({
       table_id: orderData.tableId === 'takeaway' ? null : orderData.tableId,
       waiter_id: orderData.waiterId || null,
       status: 'new',
       total_amount: orderData.totalAmount
     }).select().single();
+
+    if (orderError) {
+      console.error('Error creating order:', orderError);
+      alert('Buyurtma saqlashda xatolik: ' + orderError.message);
+    }
 
     if (orderResponse) {
       const itemsToInsert = orderData.items.map(item => ({
@@ -401,8 +518,29 @@ export const useStore = create<StoreState>((set, get) => ({
   
   updateOrderStatus: async (id, status, paymentMethod) => {
     const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (paymentMethod) updateData.payment_method = paymentMethod;
+    
+    // Update orders table
     await supabase.from('orders').update(updateData).eq('id', id);
+
+    // If paid, insert into payments table
+    if (status === 'paid' && paymentMethod) {
+      const order = get().orders.find(o => o.id === id);
+      if (order) {
+        await supabase.from('payments').insert({
+          order_id: id,
+          amount: order.totalAmount,
+          payment_method: paymentMethod
+        });
+      }
+    }
+
+    if (status === 'cancelled') {
+      const order = get().orders.find(o => o.id === id);
+      if (order && order.tableId && order.tableId !== 'takeaway') {
+        await supabase.from('tables').update({ status: 'available' }).eq('id', order.tableId);
+      }
+    }
+
     get().fetchInitialData();
   },
 
@@ -559,5 +697,24 @@ export const useStore = create<StoreState>((set, get) => ({
     const { error } = await supabase.from('notebook_entries').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
     if (!error) get().fetchInitialData();
     else console.error(error);
+  },
+
+  setSystemOpen: async (isOpen) => {
+    const { error } = await supabase.from('settings').update({ value: isOpen ? 'true' : 'false' }).eq('key', 'is_system_open');
+    if (!error) {
+      set({ isSystemOpen: isOpen });
+    } else {
+      console.error(error);
+    }
+  },
+
+  setTheme: (theme) => {
+    localStorage.setItem('theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    set({ theme });
   }
 }));

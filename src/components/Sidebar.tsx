@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, Wallet, Video, Package } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, Wallet, Video, Package, LogOut } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -8,6 +8,7 @@ interface SidebarProps {
 
 const adminLinks = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+  { name: 'Hisobotlar', path: '/admin/reports', icon: ClipboardList },
   { name: 'Menyu', path: '/admin/menu', icon: UtensilsCrossed },
   { name: 'Buyurtmalar', path: '/admin/orders', icon: ClipboardList },
   { name: 'Moliya', path: '/admin/finance', icon: Wallet },
@@ -34,14 +35,10 @@ export const Sidebar = ({ role }: SidebarProps) => {
   const links = role === 'admin' ? adminLinks : role === 'cashier' ? cashierLinks : waiterLinks;
 
   return (
-    <aside className="w-72 bg-slate-900 text-slate-300 h-screen sticky top-0 flex flex-col shadow-2xl z-20">
-      <div className="p-8 flex items-center gap-3">
-        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-          <UtensilsCrossed className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Isfaryam</h1>
-          <p className="text-xs text-slate-400 font-medium capitalize tracking-wider">{role} Paneli</p>
+    <aside className="w-72 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 h-screen sticky top-0 flex flex-col border-r border-slate-200 dark:border-slate-700 z-20 transition-colors duration-200">
+      <div className="p-8 flex items-center justify-center border-b border-slate-100 dark:border-slate-700">
+        <div className="shadow-lg rounded-2xl overflow-hidden drop-shadow-sm transition-transform hover:scale-105">
+          <img src="/logo.png" alt="Isfayram Logo" className="h-16 w-auto object-contain scale-110" />
         </div>
       </div>
 
@@ -55,12 +52,12 @@ export const Sidebar = ({ role }: SidebarProps) => {
               to={link.path}
               className={`group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 ${
                 isActive 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <div className="flex items-center gap-3.5">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-white'}`} />
                 <span className="font-medium text-sm">{link.name}</span>
               </div>
               {isActive && <ChevronRight className="w-4 h-4 opacity-50" />}
@@ -70,7 +67,17 @@ export const Sidebar = ({ role }: SidebarProps) => {
       </nav>
 
       <div className="p-4 mt-auto">
-        {/* User profile moved to Settings */}
+        <button 
+          onClick={() => {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('adminUser');
+            window.location.href = '/login';
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all font-medium"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Tizimdan chiqish</span>
+        </button>
       </div>
     </aside>
   );

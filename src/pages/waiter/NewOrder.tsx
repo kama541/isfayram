@@ -10,8 +10,13 @@ export const NewOrder = () => {
   const [searchParams] = useSearchParams();
   const tableParam = searchParams.get('table');
   
+  const storedUser = localStorage.getItem('currentUser');
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const isCashier = currentUser?.role === 'cashier';
+
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
   const [selectedTable, setSelectedTable] = useState(tableParam || '');
+  const [selectedWaiter, setSelectedWaiter] = useState('');
   const [cart, setCart] = useState<{id: string, quantity: number, price: number}[]>([]);
 
   // Check if this table has an active order
@@ -56,12 +61,9 @@ export const NewOrder = () => {
     if (activeOrder) {
       addItemsToOrder(activeOrder.id, mappedItems, totalAmount);
     } else {
-      const storedUser = localStorage.getItem('currentUser');
-      const currentUser = storedUser ? JSON.parse(storedUser) : null;
-      
       createOrder({
         tableId: selectedTable,
-        waiterId: currentUser?.id || undefined,
+        waiterId: isCashier && selectedWaiter ? selectedWaiter : (currentUser?.id || undefined),
         status: 'pending',
         items: mappedItems,
         totalAmount
@@ -73,16 +75,16 @@ export const NewOrder = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-slate-50 font-sans">
+    <div className="flex h-[calc(100vh-5rem)] bg-slate-50 dark:bg-slate-900 font-sans">
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="p-6 bg-white border-b border-slate-200">
+        <div className="p-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-4 mb-6">
-            <Link to="/waiter" className="p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
+            <Link to="/waiter" className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
               <ChevronLeft className="w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Yangi Buyurtma</h1>
-              <p className="text-slate-500 text-sm mt-1">Taomlarni tanlang va buyurtma formating</p>
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Yangi Buyurtma</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Taomlarni tanlang va buyurtma formating</p>
             </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -92,8 +94,8 @@ export const NewOrder = () => {
                 onClick={() => setActiveCategory(c.id)}
                 className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                   activeCategory === c.id 
-                    ? 'bg-slate-900 text-white shadow-md' 
-                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                    ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-md' 
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                 }`}
               >
                 {c.name}
@@ -108,16 +110,16 @@ export const NewOrder = () => {
               <div 
                 key={item.id} 
                 onClick={() => item.isAvailable && addToCart(item)}
-                className={`bg-white rounded-2xl border overflow-hidden shadow-sm flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-blue-500 group ${
-                  !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200' : 'border-slate-100'
+                className={`bg-white dark:bg-slate-800 rounded-2xl border overflow-hidden shadow-sm flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-blue-500 group ${
+                  !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'
                 }`}
               >
-                <div className="h-36 bg-slate-100 overflow-hidden">
+                <div className="h-36 bg-slate-100 dark:bg-slate-900 overflow-hidden">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-1">{item.name}</h3>
-                  <p className="text-blue-600 font-bold mt-1">{formatCurrency(item.price)}</p>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
+                  <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>
                 </div>
               </div>
             ))}
@@ -125,41 +127,57 @@ export const NewOrder = () => {
         </div>
       </div>
 
-      <div className="w-[400px] bg-white border-l border-slate-200 flex flex-col h-full shadow-2xl z-10">
-        <div className="p-6 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-            <ShoppingCart className="w-5 h-5 text-blue-500" /> Joriy Buyurtma
+      <div className="w-[400px] bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-full shadow-2xl z-10">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+            <ShoppingCart className="w-5 h-5 text-blue-500 dark:text-blue-400" /> Joriy Buyurtma
           </h2>
           <select 
             value={selectedTable} 
             onChange={(e) => setSelectedTable(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
           >
             <option value="">Stolni tanlang (Yoki S-oboy)</option>
             <option value="takeaway" className="font-bold text-blue-600">S-oboy (Olib ketish)</option>
             {tables.filter(t => t.status === 'available' || t.id === selectedTable).map(t => (
-              <option key={t.id} value={t.id}>№{t.number} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
+              <option key={t.id} value={t.id}>{t.number} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
             ))}
           </select>
+
+          {isCashier && !activeOrder && (
+            <div className="mt-4">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ofitsiantga biriktirish (ixtiyoriy)</label>
+              <select 
+                value={selectedWaiter} 
+                onChange={(e) => setSelectedWaiter(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+              >
+                <option value="">O'zim (Kassir)</option>
+                {useStore.getState().employees.filter(e => e.role === 'waiter' && e.isActive).map(w => (
+                  <option key={w.id} value={w.id}>{w.fullName}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 dark:bg-slate-900/30">
           
           {/* Odingi narsalar (Existing items) */}
           {activeOrder && activeOrder.items.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-500 mb-3 px-1 uppercase tracking-wider">Avvalgi buyurtmalar</h3>
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 px-1 uppercase tracking-wider">Avvalgi buyurtmalar</h3>
               <div className="space-y-3">
                 {activeOrder.items.map(item => {
                   const menuItem = menuItems.find(m => m.id === item.menuItemId);
                   if (!menuItem) return null;
                   return (
-                    <div key={item.id} className="flex justify-between items-center bg-slate-100 border border-slate-200 p-3 rounded-xl opacity-80">
+                    <div key={item.id} className="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 p-3 rounded-xl opacity-80">
                       <div className="flex-1 pr-4">
-                        <h4 className="font-semibold text-slate-700 text-sm">{menuItem.name}</h4>
-                        <p className="text-slate-500 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>
+                        <h4 className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{menuItem.name}</h4>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>
                       </div>
-                      <div className="bg-white px-3 py-1 rounded-lg border border-slate-200 font-bold text-sm text-slate-600">
+                      <div className="bg-white dark:bg-slate-700 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-sm text-slate-600 dark:text-slate-300">
                         {item.quantity} dona
                       </div>
                     </div>
@@ -171,7 +189,7 @@ export const NewOrder = () => {
 
           {/* Yangi qo'shilgan narsalar */}
           {(cart.length > 0 || activeOrder) && (
-            <h3 className="text-sm font-bold text-slate-500 mb-3 px-1 uppercase tracking-wider">
+            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 px-1 uppercase tracking-wider">
               {activeOrder ? 'Yangi qo\'shilmoqda' : 'Tanlanganlar'}
             </h3>
           )}
@@ -180,16 +198,16 @@ export const NewOrder = () => {
             const menuItem = menuItems.find(m => m.id === item.id);
             if (!menuItem) return null;
             return (
-              <div key={item.id} className="flex justify-between items-center bg-white border border-slate-100 p-4 rounded-2xl shadow-sm">
+              <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
                 <div className="flex-1 pr-4">
-                  <h4 className="font-bold text-slate-800 text-sm leading-tight">{menuItem.name}</h4>
-                  <p className="text-slate-500 text-xs mt-1 font-medium">{formatCurrency(item.price * item.quantity)}</p>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{menuItem.name}</h4>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">{formatCurrency(item.price * item.quantity)}</p>
                 </div>
-                <div className="flex items-center gap-3 bg-slate-50 rounded-xl px-1.5 py-1.5 border border-slate-100">
-                  <button onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} className="p-1.5 bg-white text-slate-600 rounded-lg shadow-sm hover:text-red-600 transition-colors">
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-xl px-1.5 py-1.5 border border-slate-100 dark:border-slate-700/50">
+                  <button onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} className="p-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm hover:text-red-600 dark:hover:text-red-400 transition-colors">
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="font-bold text-sm w-4 text-center text-slate-800">{item.quantity}</span>
+                  <span className="font-bold text-sm w-4 text-center text-slate-800 dark:text-slate-200">{item.quantity}</span>
                   <button onClick={(e) => { e.stopPropagation(); addToCart(menuItem); }} className="p-1.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-colors">
                     <Plus className="w-3 h-3" />
                   </button>
@@ -198,17 +216,17 @@ export const NewOrder = () => {
             )
           })}
           {cart.length === 0 && (
-            <div className="text-center text-slate-400 mt-12 flex flex-col items-center">
-              <ShoppingCart className="w-12 h-12 mb-4 text-slate-200" />
+            <div className="text-center text-slate-400 dark:text-slate-500 mt-12 flex flex-col items-center">
+              <ShoppingCart className="w-12 h-12 mb-4 text-slate-200 dark:text-slate-700" />
               <p>Savatcha bo'sh</p>
             </div>
           )}
         </div>
 
-        <div className="p-6 border-t border-slate-200 bg-white">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div className="flex justify-between items-center mb-6">
-            <span className="font-bold text-slate-500">Jami summa:</span>
-            <span className="text-2xl font-bold text-slate-800 tracking-tight">{formatCurrency(totalAmount)}</span>
+            <span className="font-bold text-slate-500 dark:text-slate-400">Jami summa:</span>
+            <span className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">{formatCurrency(totalAmount)}</span>
           </div>
           <button 
             onClick={handleSubmit}

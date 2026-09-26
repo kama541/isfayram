@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { Power } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -20,14 +21,67 @@ import { CameraManagement } from './pages/admin/CameraManagement';
 import { InventoryManagement } from './pages/admin/InventoryManagement';
 import { Settings } from './pages/admin/Settings';
 import { KDS } from './pages/kds/KDS';
+import { Reports } from './pages/admin/Reports';
+
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
+  const userStr = localStorage.getItem('currentUser');
+  const adminStr = localStorage.getItem('adminUser'); // for admin
+
+  if (allowedRoles.includes('admin') && adminStr) {
+    return <>{children}</>;
+  }
+
+  if (userStr) {
+    const user = JSON.parse(userStr);
+    if (allowedRoles.includes(user.role)) {
+      return <>{children}</>;
+    }
+  }
+
+  return <Navigate to="/login" replace />;
+};
+
+const SystemClosedWrapper = ({ children }: { children: React.ReactNode }) => {
+  const isSystemOpen = useStore(state => state.isSystemOpen);
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isCustomerRoute = location.pathname.startsWith('/menu');
+  
+  if (!isSystemOpen && !isAdminRoute && !isCustomerRoute) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col items-center justify-center font-sans">
+        <div className="bg-white p-10 rounded-3xl max-w-md text-center border border-slate-200 shadow-2xl">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner shadow-red-200">
+            <Power className="w-10 h-10 text-red-500" />
+          </div>
+          <h1 className="text-3xl font-bold mb-4 text-slate-800 tracking-tight">Tizim Yopilgan</h1>
+          <p className="text-slate-500 text-lg mb-8 leading-relaxed">
+            Hozircha tizim faoliyati vaqtincha to'xtatilgan. Iltimos adminga murojaat qiling.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+};
 
 function App() {
   const fetchInitialData = useStore(state => state.fetchInitialData);
   const initRealtime = useStore(state => state.initRealtime);
+  const theme = useStore(state => state.theme);
   
   const [showSplash, setShowSplash] = useState(() => {
     return !sessionStorage.getItem('splashShown');
   });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   useEffect(() => {
     fetchInitialData();
@@ -48,31 +102,33 @@ function App() {
 
         {!showSplash && (
           <BrowserRouter>
-            <Routes>
-              {/* Auth Route */}
+            <SystemClosedWrapper>
+              <Routes>
+                {/* Auth Route */}
               <Route path="/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<DashboardLayout role="admin"><AdminDashboard /></DashboardLayout>} />
-              <Route path="/admin/menu" element={<DashboardLayout role="admin"><MenuManagement /></DashboardLayout>} />
-              <Route path="/admin/orders" element={<DashboardLayout role="admin"><OrdersManagement /></DashboardLayout>} />
-              <Route path="/admin/staff" element={<DashboardLayout role="admin"><StaffManagement /></DashboardLayout>} />
-              <Route path="/admin/finance" element={<DashboardLayout role="admin"><FinanceManagement /></DashboardLayout>} />
-              <Route path="/admin/inventory" element={<DashboardLayout role="admin"><InventoryManagement /></DashboardLayout>} />
-              <Route path="/admin/cameras" element={<DashboardLayout role="admin"><CameraManagement /></DashboardLayout>} />
-              <Route path="/admin/settings" element={<DashboardLayout role="admin"><Settings /></DashboardLayout>} />
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><AdminDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/menu" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/staff" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StaffManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Reports /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><InventoryManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/cameras" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><CameraManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Settings /></DashboardLayout></ProtectedRoute>} />
 
               {/* Cashier Routes */}
-              <Route path="/cashier" element={<DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout>} />
-              <Route path="/cashier/orders" element={<DashboardLayout role="cashier"><OrdersManagement /></DashboardLayout>} />
-              <Route path="/cashier/finance" element={<DashboardLayout role="cashier"><FinanceManagement /></DashboardLayout>} />
-              <Route path="/cashier/new-order" element={<DashboardLayout role="cashier"><NewOrder /></DashboardLayout>} />
+              <Route path="/cashier" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/orders" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/finance" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/new-order" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><NewOrder /></DashboardLayout></ProtectedRoute>} />
 
               {/* Waiter Routes */}
-              <Route path="/waiter" element={<DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout>} />
-              <Route path="/waiter/new-order" element={<DashboardLayout role="waiter"><NewOrder /></DashboardLayout>} />
-              <Route path="/waiter/tables" element={<DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout>} />
+              <Route path="/waiter" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/waiter/new-order" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><NewOrder /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/waiter/tables" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout></ProtectedRoute>} />
 
               {/* Customer QR Routes */}
               <Route path="/menu/:tableId" element={<CustomerMenu />} />
@@ -80,9 +136,10 @@ function App() {
               {/* KDS Route */}
               <Route path="/kds/:department" element={<KDS />} />
 
-              {/* Default Redirect */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
-            </Routes>
+                {/* Default Redirect */}
+                <Route path="/" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </SystemClosedWrapper>
           </BrowserRouter>
         )}
       </>

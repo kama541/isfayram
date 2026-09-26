@@ -9,6 +9,15 @@ export const Login = () => {
   const { employees } = useStore();
   const [selectedUser, setSelectedUser] = useState<Employee | null>(null);
   const [pin, setPin] = useState('');
+  const [adminClicks, setAdminClicks] = useState(0);
+
+  const handleAdminClick = () => {
+    const newClicks = adminClicks + 1;
+    setAdminClicks(newClicks);
+    if (newClicks >= 3) {
+      navigate('/admin/login');
+    }
+  };
 
   const activeWaiters = employees.filter(e => e.role === 'waiter' && e.isActive);
   const activeCashiers = employees.filter(e => e.role === 'cashier' && e.isActive);
@@ -90,11 +99,14 @@ export const Login = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
       <div className="flex flex-col items-center mb-10">
-        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-blue-600/30">
-          <UtensilsCrossed className="w-8 h-8" />
+        <div 
+          onClick={handleAdminClick}
+          className="mb-6 cursor-pointer select-none transition-all hover:scale-105 active:scale-95"
+        >
+          <img src="/logo.png" alt="Isfayram Logo" className="h-36 object-contain drop-shadow-2xl rounded-3xl" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Isfaryam</h1>
-        <p className="text-slate-500 mt-2">Tizimga kirish uchun o'zingizni tanlang</p>
+        <h1 className="text-3xl font-bold text-slate-800 tracking-tight hidden">Isfayram</h1>
+        <p className="text-slate-500 mt-2 font-medium">Tizimga kirish uchun o'zingizni tanlang</p>
       </div>
 
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -152,14 +164,8 @@ export const Login = () => {
         </div>
       </div>
 
-      <div className="mt-12">
-        <button 
-          onClick={() => navigate('/admin/login')}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-600 font-medium transition-colors bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm"
-        >
-          <Lock className="w-4 h-4" />
-          Admin sifatida kirish
-        </button>
+      <div className="mt-12 h-10">
+        {/* Admin login button removed. Secretly click the main logo icon 3 times to access admin panel. */}
       </div>
     </div>
   );

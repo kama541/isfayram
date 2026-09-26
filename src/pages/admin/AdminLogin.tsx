@@ -4,7 +4,6 @@ import { Shield, Mail, Lock, ArrowRight, UtensilsCrossed } from 'lucide-react';
 
 export const AdminLogin = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,11 +14,8 @@ export const AdminLogin = () => {
     setError('');
 
     try {
-      // In a real scenario with full Supabase Auth:
-      // const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      // For demonstration with dummy data since we bypassed profiles auth reference:
-      if (email === 'admin@admin.com' && password === 'admin123') {
+      if (password === '111111') {
+        localStorage.setItem('adminUser', JSON.stringify({ role: 'admin', email: 'admin' }));
         navigate('/admin');
       } else {
         setError('Email yoki parol notog\'ri');
@@ -32,14 +28,14 @@ export const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans">
-      <div className="max-w-md w-full bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-blue-600/30">
-            <Shield className="w-8 h-8" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
+      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg border border-slate-200">
+        <div className="flex flex-col items-center mb-6">
+          <div className="mb-4 shadow-xl rounded-[1.5rem] overflow-hidden drop-shadow-md">
+            <img src="/logo.png" alt="Isfayram Logo" className="h-28 w-auto object-contain scale-110" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Admin Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">Boshqaruv tizimiga kirish</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight hidden">Isfayram Admin Panel</h1>
+          <p className="text-slate-500 text-sm mt-2 font-medium">Boshqaruv tizimiga kirish</p>
         </div>
 
         {error && (
@@ -50,24 +46,7 @@ export const AdminLogin = () => {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5 ml-1">Elektron pochta</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                <Mail className="w-5 h-5" />
-              </div>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                placeholder="admin@admin.com"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1.5 ml-1">Parol</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5 ml-1">Maxfiy Parol</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                 <Lock className="w-5 h-5" />
@@ -76,7 +55,7 @@ export const AdminLogin = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 placeholder="••••••••"
                 required
               />
@@ -95,7 +74,7 @@ export const AdminLogin = () => {
 
         <button 
           onClick={() => navigate('/login')}
-          className="w-full mt-6 py-3 flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-colors"
+          className="w-full mt-6 py-3 flex items-center justify-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
         >
           <UtensilsCrossed className="w-4 h-4" />
           Kassa va Ofitsiant bo'limiga qaytish
