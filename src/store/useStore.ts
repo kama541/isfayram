@@ -43,6 +43,7 @@ interface StoreState {
   addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<void>;
   updateOrderTable: (orderId: string, newTableId: string) => Promise<void>;
   updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card' | 'mixed') => void;
+  removeOrderItem: (orderId: string, itemId: string, itemTotal: number) => Promise<void>;
   
   createWaiterCall: (tableId: string) => void;
   resolveWaiterCall: (id: string) => void;
@@ -609,6 +610,16 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }
 
+    get().silentFetch();
+  },
+
+  removeOrderItem: async (orderId, itemId, itemTotal) => {
+    await supabase.from('order_items').delete().eq('id', itemId);
+    const { data: order } = await supabase.from('orders').select('total_amount').eq('id', orderId).single();
+    if (order) {
+      const newTotal = order.total_amount - itemTotal;
+      await supabase.from('orders').update({ total_amount: newTotal }).eq('id', orderId);
+    }
     get().silentFetch();
   },
 

@@ -6,6 +6,7 @@ import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
 import { TimeElapsed } from '../../components/TimeElapsed';
 import { PaymentModal } from '../../components/PaymentModal';
+import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 import { Printer, BookOpen, Power, ListX, X, Check, Calculator, Banknote } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -16,6 +17,7 @@ export const CashierDashboard = () => {
   const [showStopList, setShowStopList] = useState(false);
   const [showShiftReport, setShowShiftReport] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<any>(null);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
 
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -104,7 +106,7 @@ export const CashierDashboard = () => {
           {pendingOrders.map(order => {
             const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
             return (
-              <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => handlePrint(order)}>
+              <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
                 <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
@@ -148,7 +150,7 @@ export const CashierDashboard = () => {
           {cancelledOrders.map(order => {
             const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
             return (
-              <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3">
+              <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors" onClick={() => setSelectedOrderDetails(order)}>
                 <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
                   <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
@@ -181,7 +183,7 @@ export const CashierDashboard = () => {
             {paidToday.map(order => {
               const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
               return (
-                <div key={order.id} className="bg-[#2e7d32] text-white p-5 rounded-3xl shadow-sm flex flex-col gap-3 group relative cursor-pointer" onClick={() => handlePrint(order)}>
+                <div key={order.id} className="bg-[#2e7d32] text-white p-5 rounded-3xl shadow-sm flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
                   <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                     <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                   </div>
@@ -222,6 +224,14 @@ export const CashierDashboard = () => {
       <div className="print-container">
         <ReceiptPrint order={printingOrder} />
       </div>
+
+      {selectedOrderDetails && (
+        <OrderDetailsModal 
+          order={selectedOrderDetails} 
+          onClose={() => setSelectedOrderDetails(null)}
+          onPrint={() => handlePrint(selectedOrderDetails)}
+        />
+      )}
 
       {showNotebook && <NotebookModal onClose={() => setShowNotebook(false)} />}
       
