@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Users, Settings, ClipboardList, ChevronRight, ChevronDown, Wallet, Package, LogOut, ChefHat, QrCode, FileText, Receipt, Grid, Calendar, BookOpen, Banknote } from 'lucide-react';
+import { Building2, Users, UserSquare2, CreditCard, UserCog, BarChart3, ChevronRight, ChevronDown, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -7,16 +7,12 @@ interface SidebarProps {
 }
 
 const adminLinks = [
-  { name: 'Oshxona', path: '/admin', icon: ChefHat },
-  { name: 'Moliya', path: '/admin/finance', icon: Wallet, hasSubmenu: true },
-  { name: 'Zallar va stollar', path: '/admin/tables', icon: Grid },
-  { name: 'QR Menyu', path: '/admin/qr', icon: QrCode },
-  { name: 'Xodimlar', path: '/admin/staff', icon: Users },
-  { name: 'Omborxona', path: '/admin/inventory', icon: Package },
-  { name: 'Hisob-fakturalar', path: '/admin/invoices', icon: FileText },
-  { name: 'Xaridlar', path: '/admin/purchases', icon: ShoppingCart },
-  { name: 'Fiskalizatsiya', path: '/admin/fiscal', icon: Receipt },
-  { name: 'Sozlamalar', path: '/admin/settings', icon: Settings },
+  { name: 'Рестораны', path: '/admin', icon: Building2 },
+  { name: 'Сотрудники', path: '/admin/staff', icon: Users },
+  { name: 'Клиенты', path: '/admin/customers', icon: UserSquare2 },
+  { name: 'Подписка', path: '/admin/subscription', icon: CreditCard },
+  { name: 'HR Кабинет', path: '/admin/hr', icon: UserCog, hasSubmenu: true },
+  { name: 'Отчёты', path: '/admin/reports', icon: BarChart3, hasSubmenu: true },
 ];
 
 const cashierLinks = [
@@ -41,48 +37,73 @@ export const Sidebar = ({ role }: SidebarProps) => {
 
   return (
     <aside className="w-[280px] bg-slate-900 text-slate-300 h-screen sticky top-0 flex flex-col z-20 transition-colors duration-200 shadow-xl overflow-hidden">
-      {/* Brand Header */}
-      <div className="p-6 pb-2">
-        <Link to="/restaurants" className="text-slate-400 hover:text-white flex items-center gap-2 mb-6 transition-colors text-sm font-medium">
-          <ChevronRight className="w-4 h-4 rotate-180" /> Barcha restoranlar
-        </Link>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center shrink-0 shadow-inner">
-            <ChefHat className="w-6 h-6 text-amber-600" />
-          </div>
-          <div>
-            <h1 className="text-white font-bold text-lg leading-tight">Isfayram Kafe</h1>
-            <p className="text-slate-400 text-xs mt-0.5">Quvasoy, UZ</p>
-          </div>
+      <div className="p-6 pb-2 mt-4">
+        <div className="text-white font-black tracking-widest text-3xl mb-8 flex items-center gap-1">
+          JOWi
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-1 mt-6 overflow-y-auto scrollbar-hide pb-4">
-        {role === 'admin' && <div className="px-3 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Boshqaruv</div>}
-        {links.map((link) => {
-          const Icon = link.icon;
-          const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
-          return (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                isActive 
-                  ? 'bg-white/10 text-white' 
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className="w-[18px] h-[18px]" />
-                <span className="font-medium text-[15px]">{link.name}</span>
-              </div>
-              {(link as any).hasSubmenu && <ChevronDown className="w-4 h-4 opacity-50" />}
-              {(!(link as any).hasSubmenu && isActive) && <ChevronRight className="w-4 h-4 opacity-50" />}
-              {(!(link as any).hasSubmenu && !isActive) && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 space-y-1 mt-2 overflow-y-auto scrollbar-hide pb-4">
+        {role === 'admin' && (
+          <>
+            {adminLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
+              return (
+                <div key={link.path}>
+                  <Link
+                    to={link.path}
+                    className={`group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-white/10 text-white font-bold' 
+                        : 'text-slate-300 hover:bg-white/5 hover:text-white font-medium'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-5 h-5 opacity-80" />
+                      <span className="text-[15px]">{link.name}</span>
+                    </div>
+                    {link.hasSubmenu && (
+                      <ChevronRight className={`w-4 h-4 opacity-50 ${isActive ? 'rotate-90' : ''}`} />
+                    )}
+                  </Link>
+                  {link.hasSubmenu && isActive && link.name === 'Отчёты' && (
+                    <div className="ml-4 pl-4 border-l border-white/10 mt-1 space-y-1">
+                      <Link to="/admin/reports" className="block px-3 py-2 text-sm text-white font-medium bg-white/10 rounded-lg">Продажи</Link>
+                      <Link to="/admin/reports/cancels" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Отказы</Link>
+                      <Link to="/admin/reports/safes" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Сейфы</Link>
+                      <Link to="/admin/reports/accounts" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Счета</Link>
+                      <Link to="/admin/reports/reservations" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Бронирования</Link>
+                      <Link to="/admin/reports/vat" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">НДС</Link>
+                      <Link to="/admin/reports/capital" className="block px-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-white/5 rounded-lg">Капитал</Link>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+        {role !== 'admin' && links.map((link) => {
+            const Icon = link.icon;
+            const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
+            return (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-white/10 text-white' 
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className="w-[18px] h-[18px]" />
+                  <span className="font-medium text-[15px]">{link.name}</span>
+                </div>
+              </Link>
+            );
+          })}
       </nav>
 
       {/* User Profile */}
