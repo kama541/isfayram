@@ -73,9 +73,9 @@ export const Sidebar = ({ role }: SidebarProps) => {
                 <Icon className="w-[18px] h-[18px]" />
                 <span className="font-medium text-[15px]">{link.name}</span>
               </div>
-              {link.hasSubmenu && <ChevronDown className="w-4 h-4 opacity-50" />}
-              {(!link.hasSubmenu && isActive) && <ChevronRight className="w-4 h-4 opacity-50" />}
-              {(!link.hasSubmenu && !isActive) && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
+              {('hasSubmenu' in link && link.hasSubmenu) && <ChevronDown className="w-4 h-4 opacity-50" />}
+              {(!('hasSubmenu' in link) && isActive) && <ChevronRight className="w-4 h-4 opacity-50" />}
+              {(!('hasSubmenu' in link) && !isActive) && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
             </Link>
           );
         })}
