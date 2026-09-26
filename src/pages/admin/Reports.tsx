@@ -1,6 +1,50 @@
 import { Search, Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
+import { useStore } from '../../store/useStore';
+import { formatCurrency } from '../../utils/format';
+import { useState, useMemo } from 'react';
 
 export const Reports = () => {
+  const { orders, menuItems, categories } = useStore();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const reportData = useMemo(() => {
+    const paidOrders = orders.filter(o => o.status === 'paid');
+    const tushum = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    
+    const dishStats = new Map<string, { id: string, name: string, category: string, quantity: number }>();
+    
+    let totalUnits = 0;
+    
+    paidOrders.forEach(order => {
+      order.items.forEach(item => {
+        totalUnits += item.quantity;
+        
+        if (dishStats.has(item.menuItemId)) {
+          dishStats.get(item.menuItemId)!.quantity += item.quantity;
+        } else {
+          const menuItem = menuItems.find(m => m.id === item.menuItemId);
+          const category = categories.find(c => c.id === menuItem?.categoryId);
+          dishStats.set(item.menuItemId, {
+            id: item.menuItemId,
+            name: menuItem?.name || 'Noma\'lum',
+            category: category?.name || 'Noma\'lum',
+            quantity: item.quantity
+          });
+        }
+      });
+    });
+
+    const items = Array.from(dishStats.values())
+      .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.category.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => b.quantity - a.quantity);
+
+    return {
+      tushum,
+      sotilganTaomlar: items.length,
+      totalUnits,
+      items
+    };
+  }, [orders, menuItems, categories, searchTerm]);
 
   return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">
@@ -23,6 +67,8 @@ export const Reports = () => {
             <input 
               type="text" 
               placeholder="Qidiruv" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-[#3b4358] text-white px-10 py-2 rounded-xl text-sm outline-none focus:ring-1 focus:ring-white/20 placeholder-slate-400 transition-all"
             />
           </div>
@@ -58,21 +104,21 @@ export const Reports = () => {
             <div className="flex items-center gap-2 text-slate-400 text-sm font-medium mb-2">
               <div className="w-4 h-4 rounded-sm border border-slate-400 flex items-center justify-center text-[10px]">-</div> Tushum
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">19 458 000 so'm</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{formatCurrency(reportData.tushum)}</div>
           </div>
           
           <div className="bg-[#2a3143] border border-white/5 rounded-2xl p-5 min-w-[200px]">
             <div className="flex items-center gap-2 text-slate-400 text-sm font-medium mb-2">
-              <div className="w-4 h-4 rounded-sm border border-slate-400 flex items-center justify-center text-[10px]">-</div> Sotilgan taomlar
+              <div className="w-4 h-4 rounded-sm border border-slate-400 flex items-center justify-center text-[10px]">-</div> Sotilgan taomlar turlari
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">36</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{reportData.sotilganTaomlar}</div>
           </div>
           
           <div className="bg-[#2a3143] border border-white/5 rounded-2xl p-5 min-w-[200px]">
             <div className="flex items-center gap-2 text-slate-400 text-sm font-medium mb-2">
               <div className="w-4 h-4 rounded-sm border border-slate-400 flex items-center justify-center text-[10px]">-</div> Jami birliklar
             </div>
-            <div className="text-2xl font-bold text-white tracking-tight">829,45</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{reportData.totalUnits}</div>
           </div>
         </div>
 
@@ -84,46 +130,25 @@ export const Reports = () => {
                 <th className="py-4 px-6 font-medium text-slate-300">Taom</th>
                 <th className="py-4 px-6 font-medium text-slate-300">Kategoriya</th>
                 <th className="py-4 px-6 font-medium text-slate-300">Bo'lim</th>
-                <th className="py-4 px-6 font-medium text-slate-300">Miqdori</th>
+                <th className="py-4 px-6 font-medium text-slate-300 text-right">Miqdori</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">SAZAN 1kg</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">BALIQ TAOMLARI</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">54,05</td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors bg-[#32394a]/30">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">OQ BALIQ 1kg</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">BALIQ TAOMLARI</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">74,7</td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">ZOLOTAYA RIBKA 1kg</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">BALIQ TAOMLARI</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">38</td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors bg-[#32394a]/30">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">QIYMA SHASHLIK</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">KABOBLAR</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">206</td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">BUXARSKIY BALIQ PORCIYA</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">BALIQ TAOMLARI</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">42</td>
-              </tr>
-              <tr className="hover:bg-white/5 transition-colors bg-[#32394a]/30">
-                <td className="py-4 px-6 text-white font-medium uppercase text-xs">BUXARSKIY BALIQ 1kg</td>
-                <td className="py-4 px-6 text-slate-400 uppercase text-xs">BALIQ TAOMLARI</td>
-                <td className="py-4 px-6 text-slate-400">oshxona</td>
-                <td className="py-4 px-6 text-white font-medium">18</td>
-              </tr>
+              {reportData.items.map((item, index) => (
+                <tr key={item.id} className={`hover:bg-white/5 transition-colors ${index % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
+                  <td className="py-4 px-6 text-white font-medium uppercase text-xs">{item.name}</td>
+                  <td className="py-4 px-6 text-slate-400 uppercase text-xs">{item.category}</td>
+                  <td className="py-4 px-6 text-slate-400">oshxona</td>
+                  <td className="py-4 px-6 text-white font-medium text-right">{item.quantity}</td>
+                </tr>
+              ))}
+              {reportData.items.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-500">
+                    Ma'lumot topilmadi
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
