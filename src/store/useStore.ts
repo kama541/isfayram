@@ -184,10 +184,26 @@ export const useStore = create<StoreState>((set, get) => ({
       
       const isSystemOpen = settingsData ? settingsData.value === 'true' : true;
 
-      set({ 
-        users, categories, menuItems, tables, orders, waiterCalls, employees, expenses, 
-        inventoryItems, recipeIngredients, inventoryTransactions, notebookEntries, isSystemOpen
-      });
+      const state = get();
+      const newState: any = {};
+      
+      if (JSON.stringify(state.users) !== JSON.stringify(users)) newState.users = users;
+      if (JSON.stringify(state.categories) !== JSON.stringify(categories)) newState.categories = categories;
+      if (JSON.stringify(state.menuItems) !== JSON.stringify(menuItems)) newState.menuItems = menuItems;
+      if (JSON.stringify(state.tables) !== JSON.stringify(tables)) newState.tables = tables;
+      if (JSON.stringify(state.orders) !== JSON.stringify(orders)) newState.orders = orders;
+      if (JSON.stringify(state.waiterCalls) !== JSON.stringify(waiterCalls)) newState.waiterCalls = waiterCalls;
+      if (JSON.stringify(state.employees) !== JSON.stringify(employees)) newState.employees = employees;
+      if (JSON.stringify(state.expenses) !== JSON.stringify(expenses)) newState.expenses = expenses;
+      if (JSON.stringify(state.inventoryItems) !== JSON.stringify(inventoryItems)) newState.inventoryItems = inventoryItems;
+      if (JSON.stringify(state.recipeIngredients) !== JSON.stringify(recipeIngredients)) newState.recipeIngredients = recipeIngredients;
+      if (JSON.stringify(state.inventoryTransactions) !== JSON.stringify(inventoryTransactions)) newState.inventoryTransactions = inventoryTransactions;
+      if (JSON.stringify(state.notebookEntries) !== JSON.stringify(notebookEntries)) newState.notebookEntries = notebookEntries;
+      if (state.isSystemOpen !== isSystemOpen) newState.isSystemOpen = isSystemOpen;
+
+      if (Object.keys(newState).length > 0) {
+        set(newState);
+      }
     } catch (error) {
       console.error('Error in silent fetch:', error);
     }
@@ -366,17 +382,17 @@ export const useStore = create<StoreState>((set, get) => ({
 
   addCategory: async (category) => {
     await supabase.from('menu_categories').insert({ name: category.name, sort_order: 0 });
-    get().fetchInitialData();
+    get().silentFetch();
   },
   
   updateCategory: async (updated) => {
     await supabase.from('menu_categories').update({ name: updated.name }).eq('id', updated.id);
-    get().fetchInitialData();
+    get().silentFetch();
   },
   
   deleteCategory: async (id) => {
     await supabase.from('menu_categories').delete().eq('id', id);
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   addMenuItem: async (item) => {
@@ -388,7 +404,7 @@ export const useStore = create<StoreState>((set, get) => ({
       image_url: item.image,
       is_available: item.isAvailable
     });
-    get().fetchInitialData();
+    get().silentFetch();
   },
   
   updateMenuItem: async (updated) => {
@@ -400,12 +416,12 @@ export const useStore = create<StoreState>((set, get) => ({
       image_url: updated.image,
       is_available: updated.isAvailable
     }).eq('id', updated.id);
-    get().fetchInitialData();
+    get().silentFetch();
   },
   
   deleteMenuItem: async (id) => {
     await supabase.from('menu_items').delete().eq('id', id);
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   updateTableStatus: async (id, status) => {
@@ -470,7 +486,7 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       // Refresh state
-      get().fetchInitialData();
+      get().silentFetch();
     }
   },
 
@@ -514,7 +530,7 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }
 
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   
@@ -543,17 +559,17 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }
 
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   createWaiterCall: async (tableId) => {
     await supabase.from('waiter_calls').insert({ table_id: tableId, call_type: 'call_waiter', status: 'new' });
-    get().fetchInitialData();
+    get().silentFetch();
   },
   
   resolveWaiterCall: async (id) => {
     await supabase.from('waiter_calls').update({ status: 'completed', resolved_at: new Date().toISOString() }).eq('id', id);
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   addEmployee: async (employee) => {
@@ -564,7 +580,7 @@ export const useStore = create<StoreState>((set, get) => ({
       is_active: employee.isActive
     });
     if (!error) {
-      get().fetchInitialData();
+      get().silentFetch();
     } else {
       console.error(error);
       alert("Xodim qo'shishda xatolik: " + error.message);
@@ -578,13 +594,13 @@ export const useStore = create<StoreState>((set, get) => ({
       pin_code: employee.pinCode,
       is_active: employee.isActive
     }).eq('id', employee.id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
   deleteEmployee: async (id) => {
     const { error } = await supabase.from('employees').delete().eq('id', id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
@@ -596,13 +612,13 @@ export const useStore = create<StoreState>((set, get) => ({
       description: expense.description || null,
       payment_method: expense.paymentMethod
     });
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
   deleteExpense: async (id) => {
     const { error } = await supabase.from('expenses').delete().eq('id', id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
@@ -615,7 +631,7 @@ export const useStore = create<StoreState>((set, get) => ({
       purchase_price: item.purchasePrice || null,
       supplier: item.supplier || null
     });
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
@@ -629,13 +645,13 @@ export const useStore = create<StoreState>((set, get) => ({
       supplier: item.supplier || null,
       updated_at: new Date().toISOString()
     }).eq('id', item.id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
   deleteInventoryItem: async (id) => {
     const { error } = await supabase.from('inventory_items').delete().eq('id', id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
@@ -660,7 +676,7 @@ export const useStore = create<StoreState>((set, get) => ({
           await supabase.from('inventory_items').update({ current_stock: tx.quantity, updated_at: new Date().toISOString() }).eq('id', item.id);
         }
       }
-      get().fetchInitialData();
+      get().silentFetch();
     } else {
       console.error(txError);
     }
@@ -680,7 +696,7 @@ export const useStore = create<StoreState>((set, get) => ({
       if (error) console.error(error);
     }
     
-    get().fetchInitialData();
+    get().silentFetch();
   },
 
   addNotebookEntry: async (entry) => {
@@ -691,13 +707,13 @@ export const useStore = create<StoreState>((set, get) => ({
       notes: entry.notes || null,
       status: entry.status
     });
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
   updateNotebookEntryStatus: async (id, status) => {
     const { error } = await supabase.from('notebook_entries').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
-    if (!error) get().fetchInitialData();
+    if (!error) get().silentFetch();
     else console.error(error);
   },
 
