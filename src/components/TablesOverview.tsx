@@ -1,6 +1,6 @@
-
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
+import { TimeElapsed } from './TimeElapsed';
 
 export const TablesOverview = () => {
   const { tables, orders, employees } = useStore();
@@ -52,6 +52,7 @@ export const TablesOverview = () => {
                   </div>
                   <div className="text-[13px] font-bold mt-1 tracking-tight">{activeOrder?.totalAmount?.toLocaleString('uz-UZ')} sum</div>
                   {waiterName && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiterName}</div>}
+                  <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={activeOrder.createdAt} /></div>
                 </>
               ) : (
                 <div className="text-sm font-medium opacity-90 mt-2">{table.seats}</div>
@@ -75,6 +76,7 @@ export const TablesOverview = () => {
               </div>
               <div className="text-[13px] font-bold mt-1 tracking-tight">{order.totalAmount?.toLocaleString('uz-UZ')} sum</div>
               {waiter && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiter.fullName}</div>}
+              <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={order.createdAt} /></div>
             </div>
           );
         })}

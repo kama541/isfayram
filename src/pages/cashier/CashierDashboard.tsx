@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
+import { TimeElapsed } from '../../components/TimeElapsed';
 import { Printer, BookOpen, Power, ListX, X, Check, Calculator } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -114,7 +115,8 @@ export const CashierDashboard = () => {
                   </div>
                   <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
-                    {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}
+                    {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})} 
+                    <span className="opacity-70 ml-1">(<TimeElapsed createdAt={order.createdAt} />)</span>
                   </div>
                 </div>
                 <div className="bg-white/10 w-max px-3 py-1.5 rounded-full text-xs font-semibold mt-1">
