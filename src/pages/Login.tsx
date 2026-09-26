@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, User as UserIcon, Lock, ChevronLeft, Delete } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import type { Employee } from '../types';
 
@@ -97,19 +98,32 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
-      <div className="flex flex-col items-center mb-10">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+      {/* Background Logo */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
+        <img src="/logo.png" alt="Background Logo" className="w-[80vw] h-[80vh] object-contain" />
+      </div>
+
+      <div className="flex flex-col items-center mb-10 relative z-10">
         <div 
           onClick={handleAdminClick}
-          className="mb-6 cursor-pointer select-none transition-all hover:scale-105 active:scale-95"
+          className="mb-6 cursor-pointer select-none transition-all"
         >
-          <img src="/logo.png" alt="Isfayram Logo" className="h-36 object-contain drop-shadow-2xl rounded-3xl" />
+          <motion.img 
+            src="/logo.png" 
+            alt="Isfayram Logo" 
+            className="h-36 object-contain drop-shadow-2xl rounded-3xl"
+            animate={{ y: [0, -15, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          />
         </div>
         <h1 className="text-3xl font-bold text-slate-800 tracking-tight hidden">Isfayram</h1>
         <p className="text-slate-500 mt-2 font-medium">Tizimga kirish uchun o'zingizni tanlang</p>
       </div>
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
         {/* Waiters Section */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
           <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">

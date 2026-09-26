@@ -133,6 +133,9 @@ function App() {
               <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Reports /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/cameras" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><CameraManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/customers" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Customers /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/subscription" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><AdminDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/hr" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StaffManagement /></DashboardLayout></ProtectedRoute>} />
 
               {/* Cashier Routes */}
               <Route path="/cashier" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout></ProtectedRoute>} />
@@ -160,6 +163,7 @@ function App() {
 
                 {/* Default Redirect */}
                 <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
             </SystemClosedWrapper>
           </BrowserRouter>
