@@ -86,6 +86,12 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+  
+  /* Fix select options styling in dark mode */
+  .dark select option {
+    background-color: #1e293b; /* slate-800 */
+    color: #f1f5f9; /* slate-100 */
+  }
 }
 
 @layer utilities {
