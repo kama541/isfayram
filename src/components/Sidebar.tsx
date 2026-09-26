@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, Wallet, Video, Package, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, ChevronDown, Wallet, Package, LogOut, ChefHat, QrCode, FileText, Receipt, Grid } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -7,14 +7,15 @@ interface SidebarProps {
 }
 
 const adminLinks = [
-  { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-  { name: 'Hisobotlar', path: '/admin/reports', icon: ClipboardList },
-  { name: 'Menyu', path: '/admin/menu', icon: UtensilsCrossed },
-  { name: 'Buyurtmalar', path: '/admin/orders', icon: ClipboardList },
-  { name: 'Moliya', path: '/admin/finance', icon: Wallet },
-  { name: 'Omborxona', path: '/admin/inventory', icon: Package },
+  { name: 'Oshxona', path: '/admin', icon: ChefHat },
+  { name: 'Moliya', path: '/admin/finance', icon: Wallet, hasSubmenu: true },
+  { name: 'Zallar va stollar', path: '/admin/tables', icon: Grid },
+  { name: 'QR Menyu', path: '/admin/qr', icon: QrCode },
   { name: 'Xodimlar', path: '/admin/staff', icon: Users },
-  { name: 'Kameralar', path: '/admin/cameras', icon: Video },
+  { name: 'Omborxona', path: '/admin/inventory', icon: Package },
+  { name: 'Hisob-fakturalar', path: '/admin/invoices', icon: FileText },
+  { name: 'Xaridlar', path: '/admin/purchases', icon: ShoppingCart },
+  { name: 'Fiskalizatsiya', path: '/admin/fiscal', icon: Receipt },
   { name: 'Sozlamalar', path: '/admin/settings', icon: Settings },
 ];
 
@@ -35,49 +36,69 @@ export const Sidebar = ({ role }: SidebarProps) => {
   const links = role === 'admin' ? adminLinks : role === 'cashier' ? cashierLinks : waiterLinks;
 
   return (
-    <aside className="w-72 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 h-screen sticky top-0 flex flex-col border-r border-slate-200 dark:border-slate-700 z-20 transition-colors duration-200">
-      <div className="p-8 flex items-center justify-center border-b border-slate-100 dark:border-slate-700">
-        <div className="shadow-lg rounded-2xl overflow-hidden drop-shadow-sm transition-transform hover:scale-105">
-          <img src="/logo.png" alt="Isfayram Logo" className="h-16 w-auto object-contain scale-110" />
+    <aside className="w-[280px] bg-slate-900 text-slate-300 h-screen sticky top-0 flex flex-col z-20 transition-colors duration-200 shadow-xl overflow-hidden">
+      {/* Brand Header */}
+      <div className="p-6 pb-2">
+        <Link to="/restaurants" className="text-slate-400 hover:text-white flex items-center gap-2 mb-6 transition-colors text-sm font-medium">
+          <ChevronRight className="w-4 h-4 rotate-180" /> Barcha restoranlar
+        </Link>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center shrink-0 shadow-inner">
+            <ChefHat className="w-6 h-6 text-amber-600" />
+          </div>
+          <div>
+            <h1 className="text-white font-bold text-lg leading-tight">Isfayram Kafe</h1>
+            <p className="text-slate-400 text-xs mt-0.5">Quvasoy, UZ</p>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1.5 mt-4 overflow-y-auto scrollbar-hide">
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-1 mt-6 overflow-y-auto scrollbar-hide pb-4">
+        {role === 'admin' && <div className="px-3 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Boshqaruv</div>}
         {links.map((link) => {
           const Icon = link.icon;
-          const isActive = location.pathname === link.path;
+          const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
           return (
             <Link
               key={link.path}
               to={link.path}
-              className={`group flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 ${
+              className={`group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
                 isActive 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-white/10 text-white' 
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-3.5">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-white'}`} />
-                <span className="font-medium text-sm">{link.name}</span>
+              <div className="flex items-center gap-3">
+                <Icon className="w-[18px] h-[18px]" />
+                <span className="font-medium text-[15px]">{link.name}</span>
               </div>
-              {isActive && <ChevronRight className="w-4 h-4 opacity-50" />}
+              {link.hasSubmenu && <ChevronDown className="w-4 h-4 opacity-50" />}
+              {(!link.hasSubmenu && isActive) && <ChevronRight className="w-4 h-4 opacity-50" />}
+              {(!link.hasSubmenu && !isActive) && <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 mt-auto">
-        <button 
-          onClick={() => {
+      {/* User Profile */}
+      <div className="p-4 mt-auto border-t border-white/10">
+        <div className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-white/5 rounded-xl transition-colors" onClick={() => {
             localStorage.removeItem('currentUser');
             localStorage.removeItem('adminUser');
             window.location.href = '/login';
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all font-medium"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Tizimdan chiqish</span>
-        </button>
+          }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+              {role === 'admin' ? 'A' : role === 'cashier' ? 'K' : 'O'}
+            </div>
+            <div>
+              <div className="text-white font-bold text-sm leading-none">{role === 'admin' ? 'admin' : role}</div>
+              <div className="text-slate-400 text-[11px] mt-1">+998916769198</div>
+            </div>
+          </div>
+          <LogOut className="w-4 h-4 text-slate-500" />
+        </div>
       </div>
     </aside>
   );
