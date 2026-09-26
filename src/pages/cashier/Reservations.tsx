@@ -1,4 +1,4 @@
-import { Calendar, Plus, Clock, Users, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Clock, Users, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 
@@ -14,6 +14,10 @@ export const Reservations = () => {
     setNewReservation({ name: '', phone: '', date: '', time: '', guests: 1, tableNumber: 1 });
     setIsModalOpen(false);
   };
+  
+  const currentUserStr = localStorage.getItem('currentUser');
+  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+  const canCancel = currentUser?.role === 'cashier' || currentUser?.role === 'admin';
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -53,12 +57,38 @@ export const Reservations = () => {
                   <div className="text-xs text-slate-500">Odam soni</div>
                   <div className="font-semibold">{res.guests} kishi, {res.tableNumber}-stol</div>
                 </div>
+                </div>
               </div>
             </div>
 
+            <div className="mt-4 flex flex-wrap gap-2">
+              {res.status === 'upcoming' && <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">Kutilmoqda</span>}
+              {res.status === 'completed' && <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">Yakunlangan</span>}
+              {res.status === 'cancelled' && <span className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">Bekor qilingan</span>}
+            </div>
+
             <div className="mt-6 flex gap-3">
-              <button onClick={() => deleteReservation(res.id)} className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 py-2 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2">
-                <Trash2 className="w-4 h-4" /> O'chirish
+              {res.status === 'upcoming' && (
+                <button 
+                  onClick={() => updateReservationStatus(res.id, 'completed')} 
+                  className="flex-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 py-2 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Yakunlash
+                </button>
+              )}
+              {res.status === 'upcoming' && canCancel && (
+                <button 
+                  onClick={() => updateReservationStatus(res.id, 'cancelled')} 
+                  className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 py-2 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2"
+                >
+                  <XCircle className="w-4 h-4" /> Otmen
+                </button>
+              )}
+              <button 
+                onClick={() => deleteReservation(res.id)} 
+                className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 p-2 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
           </div>

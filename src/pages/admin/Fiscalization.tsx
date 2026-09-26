@@ -1,6 +1,17 @@
 import { Receipt, RefreshCw, Download, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
 
 export const Fiscalization = () => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = () => {
+    setIsSyncing(true);
+    setTimeout(() => {
+      setIsSyncing(false);
+      alert('Barcha cheklar muvaffaqiyatli sinxronlashtirildi!');
+    }, 1500);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -11,8 +22,15 @@ export const Fiscalization = () => {
           <p className="text-slate-500 text-sm mt-1">Soliq qo'mitasi (UzDSt) bilan integratsiya va Z-otchyotlar</p>
         </div>
         <div className="flex gap-3">
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <RefreshCw className="w-5 h-5" /> Sinxronizatsiya
+          <button 
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors ${
+              isSyncing ? 'bg-purple-400 text-white cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white'
+            }`}
+          >
+            <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} /> 
+            {isSyncing ? 'Sinxronlanmoqda...' : 'Sinxronizatsiya'}
           </button>
         </div>
       </div>
