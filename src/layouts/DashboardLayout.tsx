@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Sidebar } from '../components/Sidebar';
-import { Search, Bell, Calendar, Moon, Sun } from 'lucide-react';
+import { Bell, Calendar, Moon, Sun } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Role } from '../types';
 
