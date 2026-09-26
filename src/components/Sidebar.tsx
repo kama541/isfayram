@@ -38,8 +38,11 @@ export const Sidebar = ({ role }: SidebarProps) => {
   return (
     <aside className="w-[280px] bg-slate-900 text-slate-300 h-screen sticky top-0 flex flex-col z-20 transition-colors duration-200 shadow-xl overflow-hidden">
       <div className="p-6 pb-2 mt-4">
-        <div className="text-white font-black tracking-widest text-3xl mb-8 flex items-center gap-1">
-          JOWi
+        <div className="text-white font-black tracking-widest text-2xl mb-8 flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20">
+            <ChefHat className="w-6 h-6 text-slate-900" />
+          </div>
+          ISFAYRAM
         </div>
       </div>
 
