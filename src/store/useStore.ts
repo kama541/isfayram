@@ -39,7 +39,7 @@ interface StoreState {
   createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
   addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<void>;
   updateOrderTable: (orderId: string, newTableId: string) => Promise<void>;
-  updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card') => void;
+  updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card' | 'mixed') => void;
   
   createWaiterCall: (tableId: string) => void;
   resolveWaiterCall: (id: string) => void;

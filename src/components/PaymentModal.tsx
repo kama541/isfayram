@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { X, Calculator, CreditCard, Banknote, Percent, User, Phone } from 'lucide-react';
 import type { Order } from '../types';
-import { formatCurrency } from '../utils/format';
 
 interface PaymentModalProps {
   order: Order | null;
