@@ -1,5 +1,4 @@
 import { Calendar, Plus, Clock, Users } from 'lucide-react';
-import { useState } from 'react';
 
 const mockReservations = [
   { id: 1, name: 'Sardor', phone: '+998 90 123 45 67', date: '2026-09-27', time: '19:00', guests: 4, tableNumber: 5, status: 'upcoming' },

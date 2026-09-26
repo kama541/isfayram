@@ -26,11 +26,10 @@ import { TablesManagement } from './pages/admin/TablesManagement';
 import { QRMenu } from './pages/admin/QRMenu';
 import { Invoices } from './pages/admin/Invoices';
 import { Purchases } from './pages/admin/Purchases';
-import { PlaceholderPage } from './pages/cashier/PlaceholderPage';
+import { Fiscalization } from './pages/admin/Fiscalization';
 import { CashierTables } from './pages/cashier/CashierTables';
 import { Customers } from './pages/cashier/Customers';
 import { Reservations } from './pages/cashier/Reservations';
-import { ChefHat, Calendar, Users, BookOpen, Grid } from 'lucide-react';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
   const userStr = localStorage.getItem('currentUser');
