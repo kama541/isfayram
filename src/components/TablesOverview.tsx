@@ -6,6 +6,10 @@ export const TablesOverview = () => {
   const { tables, orders, employees } = useStore();
   const navigate = useNavigate();
 
+  const storedUser = localStorage.getItem('currentUser');
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const isCashierOrAdmin = currentUser?.role === 'cashier' || localStorage.getItem('adminUser');
+
   const handleTableClick = (tableId: string) => {
     const rootRole = window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter';
     navigate(`/${rootRole}/new-order?table=${tableId}`);
@@ -50,7 +54,7 @@ export const TablesOverview = () => {
                     <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
                     <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
                   </div>
-                  <div className="text-[13px] font-bold mt-1 tracking-tight">{activeOrder?.totalAmount?.toLocaleString('uz-UZ')} sum</div>
+                  {isCashierOrAdmin && <div className="text-[13px] font-bold mt-1 tracking-tight">{activeOrder?.totalAmount?.toLocaleString('uz-UZ')} sum</div>}
                   {waiterName && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiterName}</div>}
                   {activeOrder && <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={activeOrder.createdAt} /></div>}
                 </>
@@ -74,7 +78,7 @@ export const TablesOverview = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
               </div>
-              <div className="text-[13px] font-bold mt-1 tracking-tight">{order.totalAmount?.toLocaleString('uz-UZ')} sum</div>
+              {isCashierOrAdmin && <div className="text-[13px] font-bold mt-1 tracking-tight">{order.totalAmount?.toLocaleString('uz-UZ')} sum</div>}
               {waiter && <div className="text-[10px] font-bold uppercase tracking-wider mt-1 text-white/90">{waiter.fullName}</div>}
               <div className="text-[10px] font-medium opacity-80 mt-1"><TimeElapsed createdAt={order.createdAt} /></div>
             </div>
