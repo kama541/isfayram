@@ -6,7 +6,7 @@ export const Reservations = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newReservation, setNewReservation] = useState({ name: '', phone: '', date: '', time: '', guests: 1, tableNumber: 1 });
   
-  const { reservations, addReservation, deleteReservation } = useLocalStore();
+  const { reservations, addReservation, deleteReservation, updateReservationStatus } = useLocalStore();
 
   const handleAddReservation = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +56,6 @@ export const Reservations = () => {
                 <div>
                   <div className="text-xs text-slate-500">Odam soni</div>
                   <div className="font-semibold">{res.guests} kishi, {res.tableNumber}-stol</div>
-                </div>
                 </div>
               </div>
             </div>
