@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UtensilsCrossed, ShoppingCart, User as UserIcon, Lock, ChevronLeft, Delete } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, Lock, ChevronLeft, Delete } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Employee } from '../types';
 

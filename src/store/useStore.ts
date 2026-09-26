@@ -118,7 +118,9 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: inventoryItemsData },
         { data: recipeIngredientsData },
         { data: inventoryTransactionsData },
-        { data: notebookEntriesData }
+        { data: notebookEntriesData },
+        { data: settingsData },
+        { data: paymentsData }
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('menu_categories').select('*').order('sort_order'),
@@ -151,7 +153,7 @@ export const useStore = create<StoreState>((set, get) => ({
           id: oi.id, menuItemId: oi.menu_item_id, quantity: oi.quantity, price: Number(oi.unit_price), notes: oi.special_instructions || ''
         }));
         
-        const payment = (paymentsData || []).find(p => p.order_id === o.id);
+        const payment = (paymentsData || []).find((p: any) => p.order_id === o.id);
         
         return {
           id: o.id, tableId: o.table_id || '', waiterId: o.waiter_id, status: o.status, items,

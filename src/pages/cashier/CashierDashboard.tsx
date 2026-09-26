@@ -91,7 +91,7 @@ export const CashierDashboard = () => {
                         Oshxonaga jo'natish
                       </button>
                     )}
-                    {(order.status === 'pending' || order.status === 'preparing' || order.status === 'ready' || order.status === 'delivered') && (
+                    {(order.status === 'pending' || order.status === 'preparing' || order.status === 'ready' || order.status === 'served') && (
                       <button 
                         onClick={() => {
                           if (window.confirm('Rostdan ham ushbu buyurtmani bekor qilmoqchimisiz?')) {

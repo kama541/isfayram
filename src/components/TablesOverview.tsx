@@ -1,21 +1,10 @@
-
-import { UtensilsCrossed, User } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 
 export const TablesOverview = () => {
   const { tables, orders, employees } = useStore();
   const navigate = useNavigate();
-
-  const getWaiterForTable = (tableId: string) => {
-    // Find active order for this table
-    const activeOrder = orders.find(o => o.tableId === tableId && o.status !== 'paid' && o.status !== 'cancelled');
-    if (!activeOrder || !activeOrder.waiterId) return null;
-
-    // Find waiter
-    const waiter = employees.find(e => e.id === activeOrder.waiterId);
-    return waiter ? waiter.fullName : null;
-  };
 
   const handleTableClick = (tableId: string) => {
     const rootRole = window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter';

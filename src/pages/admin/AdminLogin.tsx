@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Mail, Lock, ArrowRight, UtensilsCrossed } from 'lucide-react';
+import { Lock, ArrowRight, UtensilsCrossed } from 'lucide-react';
 
 export const AdminLogin = () => {
   const navigate = useNavigate();
