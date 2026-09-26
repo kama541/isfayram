@@ -11,6 +11,8 @@ export const StaffManagement = () => {
     (emp.phone && emp.phone.includes(searchTerm)) ||
     (emp.pin && emp.pin.includes(searchTerm))
   );
+
+  return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">
       
       {/* Search Header */}
