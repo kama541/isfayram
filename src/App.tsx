@@ -22,6 +22,11 @@ import { InventoryManagement } from './pages/admin/InventoryManagement';
 import { Settings } from './pages/admin/Settings';
 import { KDS } from './pages/kds/KDS';
 import { Reports } from './pages/admin/Reports';
+import { TablesManagement } from './pages/admin/TablesManagement';
+import { QRMenu } from './pages/admin/QRMenu';
+import { Invoices } from './pages/admin/Invoices';
+import { Purchases } from './pages/admin/Purchases';
+import { Fiscalization } from './pages/admin/Fiscalization';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
   const userStr = localStorage.getItem('currentUser');
@@ -110,14 +115,21 @@ function App() {
 
               {/* Admin Routes */}
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><AdminDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/tables" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><TablesManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/qr" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><QRMenu /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/staff" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StaffManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><InventoryManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Invoices /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/purchases" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Purchases /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/fiscal" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Fiscalization /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Settings /></DashboardLayout></ProtectedRoute>} />
+              
+              {/* Other legacy admin routes that might be referenced but not in the main sidebar */}
               <Route path="/admin/menu" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/admin/staff" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StaffManagement /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Reports /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><InventoryManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/cameras" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><CameraManagement /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Settings /></DashboardLayout></ProtectedRoute>} />
 
               {/* Cashier Routes */}
               <Route path="/cashier" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout></ProtectedRoute>} />
