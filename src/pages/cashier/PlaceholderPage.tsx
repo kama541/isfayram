@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 export const PlaceholderPage = ({ title, icon: Icon }: { title: string, icon: any }) => (
   <div className="space-y-6">
