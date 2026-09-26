@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, ChevronDown, Wallet, Package, LogOut, ChefHat, QrCode, FileText, Receipt, Grid } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Users, Settings, UtensilsCrossed, ClipboardList, ChevronRight, ChevronDown, Wallet, Package, LogOut, ChefHat, QrCode, FileText, Receipt, Grid, Calendar, BookOpen, Banknote } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -20,9 +20,14 @@ const adminLinks = [
 ];
 
 const cashierLinks = [
-  { name: 'Dashboard', path: '/cashier', icon: LayoutDashboard },
-  { name: 'Buyurtmalar', path: '/cashier/orders', icon: ClipboardList },
-  { name: 'Moliya', path: '/cashier/finance', icon: Wallet },
+  { name: 'Buyurtmalar', path: '/cashier', icon: ClipboardList },
+  { name: 'Zallar', path: '/cashier/tables', icon: Grid },
+  { name: 'Oshxona', path: '/cashier/kitchen', icon: ChefHat },
+  { name: 'Bronlar', path: '/cashier/reservations', icon: Calendar },
+  { name: 'Mijozlar', path: '/cashier/customers', icon: Users },
+  { name: 'Kassa', path: '/cashier/finance', icon: Banknote },
+  { name: 'Taomlar', path: '/cashier/menu', icon: BookOpen },
+  { name: 'Sozlamalar', path: '/cashier/settings', icon: Settings },
 ];
 
 const waiterLinks = [
