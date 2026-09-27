@@ -2,12 +2,14 @@ import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { Filter, Download } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 
 export const OrdersManagement = () => {
   const { orders, tables, employees } = useStore();
   const [showFilter, setShowFilter] = useState(false);
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const getTableNumber = (tableId: string | undefined | null) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -96,7 +98,7 @@ export const OrdersManagement = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filteredOrders.map(order => (
-                <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
+                <tr key={order.id} onClick={() => setSelectedOrder(order)} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer">
                   <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">#{formatOrderId(order.id)}</td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatDate(order.createdAt)}</td>
                   <td className="px-6 py-4">
@@ -126,6 +128,14 @@ export const OrdersManagement = () => {
           )}
         </div>
       </div>
+
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onPrint={() => {}}
+        />
+      )}
     </div>
   );
 };

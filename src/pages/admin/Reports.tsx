@@ -3,6 +3,7 @@ import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
+import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 
 type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
 type DishTab = 'taomlar' | 'modifikatorlar' | 'xizmatlar';
@@ -41,7 +42,7 @@ const StatCard = ({ label, value, icon, highlight }: { label: string; value: str
   );
 };
 
-const DataTable = ({ headers, rows, emptyText }: { headers: string[]; rows: string[][]; emptyText: string }) => (
+const DataTable = ({ headers, rows, emptyText, onRowClick }: { headers: string[]; rows: string[][]; emptyText: string; onRowClick?: (rowIndex: number) => void }) => (
   <div className="bg-[#2a3143] rounded-2xl border border-white/5 overflow-hidden">
     <table className="w-full text-left text-sm">
       <thead>
@@ -53,7 +54,7 @@ const DataTable = ({ headers, rows, emptyText }: { headers: string[]; rows: stri
         {rows.length === 0 ? (
           <tr><td colSpan={headers.length} className="py-10 text-center text-slate-500">{emptyText}</td></tr>
         ) : rows.map((row, i) => (
-          <tr key={i} className={`hover:bg-white/5 transition-colors ${i % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
+          <tr key={i} onClick={() => onRowClick?.(i)} className={`hover:bg-white/5 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${i % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
             {row.map((cell, j) => (
               <td key={j} className={`py-4 px-6 ${j === 0 ? 'text-white font-medium' : 'text-slate-400'}`}>{cell}</td>
             ))}
@@ -93,6 +94,7 @@ export const Reports = () => {
   const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
   const [showWaiterFilter, setShowWaiterFilter] = useState(false);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const waiters = employees.filter(e => e.role === 'waiter');
 
@@ -284,6 +286,7 @@ export const Reports = () => {
                   o.status === 'paid' ? 'To\'langan' : o.status === 'cancelled' ? 'Bekor qilingan' : o.status,
                   formatCurrency(o.totalAmount)
                 ])}
+                onRowClick={(idx) => setSelectedOrder(filteredOrders.slice().reverse()[idx])}
                 emptyText="Tanlangan vaqt oralig'ida buyurtmalar topilmadi" />
             </div>
           )}
@@ -302,6 +305,7 @@ export const Reports = () => {
                   formatCurrency(o.totalAmount),
                   employees.find(e => e.id === o.waiterId)?.fullName || 'Kassir'
                 ])}
+                onRowClick={(idx) => setSelectedOrder(otmenlarData.cancelled[idx])}
                 emptyText="Bekor qilingan buyurtma yo'q" />
             </div>
           )}
@@ -395,6 +399,14 @@ export const Reports = () => {
           )}
         </div>
       </div>
+      
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onPrint={() => {}}
+        />
+      )}
     </div>
   );
 };
