@@ -291,7 +291,7 @@ export const NewOrder = () => {
 
     {/* KITCHEN RECEIPTS FOR PRINTING */}
     <div className="hidden print:block font-mono text-black">
-      {Object.entries(groupedCart).map(([catName, items], index) => (
+      {Object.entries(groupedCart).map(([catName, items]) => (
         <div key={catName} className="p-4 w-[80mm] mx-auto" style={{ pageBreakAfter: 'always' }}>
           <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
           <div className="text-center mb-4 mt-2">
