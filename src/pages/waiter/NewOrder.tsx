@@ -92,12 +92,33 @@ export const NewOrder = () => {
       });
     }
     
-    // Go back
-    navigate(-1);
+    // Print kitchen receipts
+    setTimeout(() => {
+      window.print();
+      // Go back after printing
+      navigate(-1);
+    }, 100);
   };
 
+  const getTableNumber = (tId: string) => {
+    if (tId === 'takeaway') return 'S-oboy';
+    const t = tables.find(x => x.id === tId);
+    return t ? t.number : tId;
+  };
+
+  const groupedCart = cart.reduce((acc, item) => {
+    const menuItem = menuItems.find(m => m.id === item.id);
+    if (!menuItem) return acc;
+    const cat = categories.find(c => c.id === menuItem.categoryId);
+    const catName = cat ? cat.name : 'Boshqa';
+    if (!acc[catName]) acc[catName] = [];
+    acc[catName].push({ ...item, name: menuItem.name });
+    return acc;
+  }, {} as Record<string, any[]>);
+
   return (
-    <div className="flex h-[calc(100vh-5rem)] bg-slate-50 dark:bg-slate-900 font-sans">
+    <>
+    <div className="flex h-[calc(100vh-5rem)] bg-slate-50 dark:bg-slate-900 font-sans print:hidden">
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <div className="p-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-4 mb-6">
@@ -267,5 +288,29 @@ export const NewOrder = () => {
         </div>
       </div>
     </div>
+
+    {/* KITCHEN RECEIPTS FOR PRINTING */}
+    <div className="hidden print:block font-mono text-black">
+      {Object.entries(groupedCart).map(([catName, items], index) => (
+        <div key={catName} className="p-4 w-[80mm] mx-auto" style={{ pageBreakAfter: 'always' }}>
+          <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
+          <div className="text-center mb-4 mt-2">
+            <p className="text-xl font-bold">Stol: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
+            <p className="text-sm">Ofitsiant: {currentUser?.name || 'Kassir'}</p>
+            <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
+          </div>
+          <div className="border-t-2 border-black border-dashed pt-4 mb-4">
+            {items.map((item: any, idx) => (
+              <div key={idx} className="flex justify-between items-start mb-3 font-bold text-lg">
+                <span className="pr-4">{item.name}</span>
+                <span className="whitespace-nowrap border-l-2 pl-2 border-black">{item.quantity} ta</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs mt-8">--- ISFAYRAM Oshxona ---</p>
+        </div>
+      ))}
+    </div>
+    </>
   );
 };
