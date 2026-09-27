@@ -25,6 +25,8 @@ export const StaffManagement = () => {
     (emp.pinCode && emp.pinCode.includes(searchTerm))
   );
 
+  const showAdminRow = searchTerm.trim() === '' || 'admin'.includes(searchTerm.toLowerCase()) || '+998 91 676 91 98'.includes(searchTerm);
+
   return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">
       
@@ -62,26 +64,27 @@ export const StaffManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              
-              <tr className="hover:bg-white/5 transition-colors group cursor-pointer">
-                <td className="py-4 px-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-medium">admin</span>
-                    <div className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px]">✓</div>
-                  </div>
-                  <div className="text-sm text-slate-400 mt-0.5">Rahbar</div>
-                </td>
-                <td className="py-4 px-6 text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500 text-xs">📞</span> +998 91 676 91 98
-                  </div>
-                </td>
-                <td className="py-4 px-6">
-                  <span className="inline-block px-3 py-1 bg-[#3b4358] rounded-full text-xs text-slate-300 font-medium border border-white/5">
-                    Isfayram Kafe
-                  </span>
-                </td>
-              </tr>
+              {showAdminRow && (
+                <tr className="hover:bg-white/5 transition-colors group cursor-pointer">
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-medium">admin</span>
+                      <div className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px]">✓</div>
+                    </div>
+                    <div className="text-sm text-slate-400 mt-0.5">Rahbar</div>
+                  </td>
+                  <td className="py-4 px-6 text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-xs">📞</span> +998 91 676 91 98
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="inline-block px-3 py-1 bg-[#3b4358] rounded-full text-xs text-slate-300 font-medium border border-white/5">
+                      Isfayram Kafe
+                    </span>
+                  </td>
+                </tr>
+              )}
 
               {filteredEmployees.map((emp, index) => (
                 <tr key={emp.id} className={`hover:bg-white/5 transition-colors group cursor-pointer ${(index + 1) % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
@@ -106,7 +109,7 @@ export const StaffManagement = () => {
                 </tr>
               ))}
               
-              {filteredEmployees.length === 0 && (
+              {!showAdminRow && filteredEmployees.length === 0 && (
                 <tr>
                   <td colSpan={3} className="py-8 text-center text-slate-500">
                     Xodimlar topilmadi
