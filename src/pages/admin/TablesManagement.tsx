@@ -9,7 +9,7 @@ export const TablesManagement = () => {
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   
   const [formData, setFormData] = useState({
-    number: 1,
+    number: '1',
     seats: 4,
     status: 'available' as 'available' | 'occupied' | 'reserved'
   });
@@ -23,7 +23,7 @@ export const TablesManagement = () => {
     }
     setIsModalOpen(false);
     setEditingTable(null);
-    setFormData({ number: 1, seats: 4, status: 'available' });
+    setFormData({ number: '1', seats: 4, status: 'available' });
   };
 
   const openEditModal = (table: Table) => {
@@ -38,22 +38,42 @@ export const TablesManagement = () => {
     }
   };
 
+  const handleSeed = async () => {
+    if (confirm("9 ta kabinet va 15 ta stol qo'shilsinmi?")) {
+      for(let i=1; i<=9; i++) {
+        await addTable({ number: `${i}-kabinet`, seats: 4, status: 'available' });
+      }
+      for(let i=1; i<=15; i++) {
+        await addTable({ number: `${i}-stol`, seats: 4, status: 'available' });
+      }
+      alert("Muvaffaqiyatli qo'shildi!");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
           <Grid className="w-6 h-6 text-blue-500" /> Xonalar
         </h1>
-        <button 
+        <div className="flex gap-2">
+          <button 
+            onClick={handleSeed}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors"
+          >
+            Seed
+          </button>
+          <button 
           onClick={() => {
             setEditingTable(null);
-            setFormData({ number: 1, seats: 4, status: 'available' });
+            setFormData({ number: '1', seats: 4, status: 'available' });
             setIsModalOpen(true);
           }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors"
         >
           <Plus className="w-5 h-5" /> Yangi xona qo'shish
         </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,7 +81,7 @@ export const TablesManagement = () => {
           <div key={table.id} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 relative group overflow-hidden">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{table.number}-xona</h3>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{table.number}</h3>
                 <p className="text-slate-500 text-sm mt-1">{table.seats} kishilik</p>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
@@ -99,12 +119,11 @@ export const TablesManagement = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Xona raqami</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Xona nomi</label>
                 <input 
-                  type="number" 
-                  min="1"
+                  type="text" 
                   value={formData.number}
-                  onChange={e => setFormData({...formData, number: parseInt(e.target.value) || 1})}
+                  onChange={e => setFormData({...formData, number: e.target.value})}
                   className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                   required
                 />

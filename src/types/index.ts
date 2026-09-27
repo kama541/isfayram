@@ -24,7 +24,7 @@ export interface MenuItem {
 
 export interface Table {
   id: string;
-  number: number;
+  number: string;
   status: 'available' | 'occupied' | 'reserved';
   seats: number;
 }

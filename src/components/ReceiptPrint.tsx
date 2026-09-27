@@ -17,7 +17,7 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
   if (!order) return null;
 
   const table = tables.find(t => t.id === order.tableId);
-  const tableLabel = table ? `${table.number}-xona` : (order.tableId === 'takeaway' ? 'S-oboy' : order.tableId?.slice(0, 8) || '-');
+  const tableLabel = table ? table.number : (order.tableId === 'takeaway' ? 'S-oboy' : order.tableId?.slice(0, 8) || '-');
 
   const tipAmount = order.totalAmount * 0.1;
   const grandTotal = order.totalAmount + tipAmount;
