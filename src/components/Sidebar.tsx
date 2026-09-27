@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Building2, Users, UserSquare2, CreditCard, UserCog, BarChart3, ChevronRight, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings } from 'lucide-react';
+import { Building2, Users, UserSquare2, CreditCard, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings } from 'lucide-react';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -69,9 +69,7 @@ export const Sidebar = ({ role }: SidebarProps) => {
                       <Icon className="w-5 h-5 opacity-80" />
                       <span className="text-[15px]">{link.name}</span>
                     </div>
-                    {link.hasSubmenu && (
-                      <ChevronRight className={`w-4 h-4 opacity-50 ${isActive ? 'rotate-90' : ''}`} />
-                    )}
+
                   </Link>
 
                 </div>
