@@ -438,8 +438,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
   addTable: async (table) => {
     await supabase.from('tables').insert({
-      number: table.number,
-      seats: table.seats,
+      table_number: table.number,
+      capacity: table.seats,
       status: table.status || 'available'
     });
     get().silentFetch();
@@ -447,8 +447,8 @@ export const useStore = create<StoreState>((set, get) => ({
 
   updateTable: async (table) => {
     await supabase.from('tables').update({
-      number: table.number,
-      seats: table.seats,
+      table_number: table.number,
+      capacity: table.seats,
       status: table.status
     }).eq('id', table.id);
     get().silentFetch();
