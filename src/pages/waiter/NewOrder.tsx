@@ -5,7 +5,7 @@ import { Plus, Minus, ShoppingCart, ChevronLeft } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
 export const NewOrder = () => {
-  const { menuItems, categories, tables, orders, createOrder, addItemsToOrder } = useStore();
+  const { menuItems, categories, tables, orders, createOrder, addItemsToOrder, employees } = useStore();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tableParam = searchParams.get('table');
@@ -16,6 +16,7 @@ export const NewOrder = () => {
   const actingWaiterId = localStorage.getItem('adminActingAsWaiter');
   const activeWaiterId = currentUser?.role === 'admin' ? actingWaiterId : currentUser?.id;
 
+  const [activeMainTab, setActiveMainTab] = useState<'taomlar' | 'modifikatorlar' | 'xizmatlar'>('taomlar');
   const [activeCategory, setActiveCategory] = useState('popular');
   const [selectedTable, setSelectedTable] = useState(tableParam || '');
   const [selectedWaiter, setSelectedWaiter] = useState('');
@@ -129,7 +130,21 @@ export const NewOrder = () => {
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Yangi Buyurtma</h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Taomlarni tanlang va buyurtma formating</p>
+              <div className="flex bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden p-1 gap-1 mt-2">
+                {(['taomlar', 'modifikatorlar', 'xizmatlar'] as const).map(tab => (
+                  <button 
+                    key={tab} 
+                    onClick={() => setActiveMainTab(tab)}
+                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                      activeMainTab === tab 
+                        ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -159,23 +174,37 @@ export const NewOrder = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredItems.map(item => (
-              <div 
-                key={item.id} 
-                onClick={() => item.isAvailable && addToCart(item)}
-                className={`bg-white dark:bg-slate-800 rounded-2xl border overflow-hidden shadow-sm flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-blue-500 group ${
-                  !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'
-                }`}
-              >
-                <div className="p-4">
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
-                  {isCashier && <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>}
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+          {activeMainTab === 'taomlar' ? (
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredItems.map(item => (
+                <div 
+                  key={item.id} 
+                  onClick={() => item.isAvailable && addToCart(item)}
+                  className={`bg-white dark:bg-slate-800 rounded-2xl border overflow-hidden shadow-sm flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-blue-500 group ${
+                    !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'
+                  }`}
+                >
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
+                    {isCashier && <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>}
+                  </div>
                 </div>
+              ))}
+              {filteredItems.length === 0 && (
+                <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
+                  Bu kategoriyada taomlar topilmadi
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-slate-400 space-y-3">
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <ShoppingCart className="w-8 h-8 opacity-20" />
               </div>
-            ))}
-          </div>
+              <p>Hozircha {activeMainTab} kiritilmagan</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -298,7 +327,7 @@ export const NewOrder = () => {
           <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
           <div className="text-center mb-4 mt-2">
             <p className="text-xl font-bold">Xona: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
-            <p className="text-sm">Ofitsiant: {currentUser?.role === 'admin' ? (employees.find(e => e.id === activeWaiterId)?.fullName || 'Noma\'lum') : (currentUser?.name || 'Kassir')}</p>
+            <p className="text-sm">Ofitsiant: {currentUser?.role === 'admin' ? (employees.find((e: any) => e.id === activeWaiterId)?.fullName || 'Noma\'lum') : (currentUser?.name || 'Kassir')}</p>
             <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
           </div>
           <div className="border-t-2 border-black border-dashed pt-4 mb-4">
