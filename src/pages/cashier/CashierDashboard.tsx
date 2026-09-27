@@ -1,6 +1,6 @@
 import { CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatOrderId } from '../../utils/format';
+import { formatCurrency, formatOrderId, formatTableName } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
@@ -22,7 +22,7 @@ export const CashierDashboard = () => {
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
     const table = tables.find(t => t.id === tableId);
-    return table ? table.number : 'Noma\'lum';
+    return table ? formatTableName(table.number) : 'Noma\'lum';
   };
 
   const handlePrint = (order: any) => {

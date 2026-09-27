@@ -1,4 +1,5 @@
 import { useStore } from '../store/useStore';
+import { formatTableName } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
 import { TimeElapsed } from './TimeElapsed';
 
@@ -51,7 +52,7 @@ export const TablesOverview = () => {
                       : 'bg-[#FF9933] text-white shadow-[#FF9933]/30'
                   }`}
             >
-              <div className="text-xl lg:text-2xl font-black tracking-tight leading-none mb-1">{table.number}</div>
+              <div className="text-xl lg:text-2xl font-black tracking-tight leading-none mb-1">{formatTableName(table.number)}</div>
               
               {computedStatus === 'occupied' ? (
                 <>

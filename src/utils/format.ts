@@ -24,3 +24,12 @@ export const formatOrderId = (id: string): string => {
   if (!id) return '';
   return parseInt(id.substring(0, 8), 16).toString().substring(0, 6);
 };
+
+export const formatTableName = (name: string | number | undefined | null): string => {
+  if (!name) return '';
+  const str = String(name);
+  if (/^\d+$/.test(str)) {
+    return `${str}-xona`;
+  }
+  return str;
+};

@@ -63,11 +63,11 @@ export const mockMenuItems: MenuItem[] = [
 ];
 
 export const mockTables: Table[] = [
-  { id: 't1', number: 1, status: 'available', seats: 4 },
-  { id: 't2', number: 2, status: 'occupied', seats: 4 },
-  { id: 't3', number: 3, status: 'reserved', seats: 6 },
-  { id: 't4', number: 4, status: 'available', seats: 2 },
-  { id: 't5', number: 5, status: 'occupied', seats: 8 },
+  { id: 't1', number: '1', status: 'available', seats: 4 },
+  { id: 't2', number: '2', status: 'occupied', seats: 4 },
+  { id: 't3', number: '3', status: 'reserved', seats: 6 },
+  { id: 't4', number: '4', status: 'available', seats: 2 },
+  { id: 't5', number: '5', status: 'occupied', seats: 8 },
 ];
 
 export const mockOrders: Order[] = [

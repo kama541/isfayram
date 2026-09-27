@@ -1,6 +1,6 @@
 import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList, Grid } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
+import { formatCurrency, formatDate, formatOrderId, formatTableName } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 import { OrderDetailsModal } from '../../components/OrderDetailsModal';
@@ -84,7 +84,7 @@ export const Reports = () => {
   const getTableNumber = (tableId: string | undefined | null) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
     const table = tables.find(t => t.id === tableId);
-    return table ? table.number : `ID:${tableId.substring(0, 4)}...`;
+    return table ? formatTableName(table.number) : `ID:${tableId.substring(0, 4)}...`;
   };
 
   const [searchTerm, setSearchTerm] = useState('');

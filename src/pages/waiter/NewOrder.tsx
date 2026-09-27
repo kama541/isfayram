@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatTableName } from '../../utils/format';
 import { Plus, Minus, ShoppingCart, ChevronLeft } from 'lucide-react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
@@ -103,7 +103,7 @@ export const NewOrder = () => {
   const getTableNumber = (tId: string) => {
     if (tId === 'takeaway') return 'S-oboy';
     const t = tables.find(x => x.id === tId);
-    return t ? t.number : tId;
+    return t ? formatTableName(t.number) : tId;
   };
 
   const groupedCart = cart.reduce((acc, item) => {
@@ -190,7 +190,7 @@ export const NewOrder = () => {
             <option value="">Xonani tanlang (Yoki S-oboy)</option>
             <option value="takeaway" className="font-bold text-blue-600">S-oboy (Olib ketish)</option>
             {tables.filter(t => t.status === 'available' || t.id === selectedTable).map(t => (
-              <option key={t.id} value={t.id}>{t.number} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
+              <option key={t.id} value={t.id}>{formatTableName(t.number)} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
             ))}
           </select>
 

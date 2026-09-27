@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Order } from '../types';
 import { useStore } from '../store/useStore';
-import { formatOrderId } from '../utils/format';
+import { formatOrderId, formatTableName } from '../utils/format';
 
 interface ReceiptPrintProps {
   order: Order | null;
@@ -17,7 +17,7 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
   if (!order) return null;
 
   const table = tables.find(t => t.id === order.tableId);
-  const tableLabel = table ? table.number : (order.tableId === 'takeaway' ? 'S-oboy' : order.tableId?.slice(0, 8) || '-');
+  const tableLabel = table ? formatTableName(table.number) : (order.tableId === 'takeaway' ? 'S-oboy' : order.tableId?.slice(0, 8) || '-');
 
   const tipAmount = order.totalAmount * 0.1;
   const grandTotal = order.totalAmount + tipAmount;
