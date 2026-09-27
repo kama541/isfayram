@@ -33,7 +33,7 @@ export const TablesManagement = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Haqiqatan ham bu stolni o'chirmoqchimisiz?")) {
+    if (confirm("Haqiqatan ham bu xonani o'chirmoqchimisiz?")) {
       await deleteTable(id);
     }
   };
@@ -42,7 +42,7 @@ export const TablesManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-          <Grid className="w-6 h-6 text-blue-500" /> Zallar va Stollar
+          <Grid className="w-6 h-6 text-blue-500" /> Xonalar
         </h1>
         <button 
           onClick={() => {
@@ -52,7 +52,7 @@ export const TablesManagement = () => {
           }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors"
         >
-          <Plus className="w-5 h-5" /> Yangi stol qo'shish
+          <Plus className="w-5 h-5" /> Yangi xona qo'shish
         </button>
       </div>
 
@@ -61,7 +61,7 @@ export const TablesManagement = () => {
           <div key={table.id} className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 relative group overflow-hidden">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Stol {table.number}</h3>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">{table.number}-xona</h3>
                 <p className="text-slate-500 text-sm mt-1">{table.seats} kishilik</p>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
@@ -90,7 +90,7 @@ export const TablesManagement = () => {
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-slate-700">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                {editingTable ? "Stolni tahrirlash" : "Yangi stol"}
+                {editingTable ? "Xonani tahrirlash" : "Yangi xona"}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <X className="w-5 h-5" />
@@ -99,7 +99,7 @@ export const TablesManagement = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stol raqami</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Xona raqami</label>
                 <input 
                   type="number" 
                   min="1"

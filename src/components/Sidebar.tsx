@@ -28,7 +28,7 @@ const cashierLinks = [
 ];
 
 const waiterLinks = [
-  { name: 'Stollar', path: '/waiter', icon: Grid },
+  { name: 'Xonalar', path: '/waiter', icon: Grid },
   { name: 'Yangi Buyurtma', path: '/waiter/new-order', icon: ShoppingCart },
   { name: 'Taomlar', path: '/waiter/menu', icon: BookOpen },
 ];

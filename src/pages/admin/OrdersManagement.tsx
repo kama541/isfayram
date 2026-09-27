@@ -25,7 +25,7 @@ export const OrdersManagement = () => {
   }, [orders, filterDate, filterStatus]);
 
   const handleExport = () => {
-    let csv = "Buyurtma ID,Sana,Stol/Manba,Holati,Summa\n";
+    let csv = "Buyurtma ID,Sana,Xona/Manba,Holati,Summa\n";
     filteredOrders.forEach(o => {
       const t = getTableNumber(o.tableId);
       const w = o.waiterId ? employees.find(e => e.id === o.waiterId)?.fullName || 'Xodim' : 'Mijoz';
@@ -89,7 +89,7 @@ export const OrdersManagement = () => {
               <tr>
                 <th className="px-6 py-4 font-semibold tracking-wider">Buyurtma ID</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Sana</th>
-                <th className="px-6 py-4 font-semibold tracking-wider">Stol / Manba</th>
+                <th className="px-6 py-4 font-semibold tracking-wider">Xona / Manba</th>
                 <th className="px-6 py-4 font-semibold tracking-wider">Holati</th>
                 <th className="px-6 py-4 font-semibold tracking-wider text-right">Summa</th>
               </tr>

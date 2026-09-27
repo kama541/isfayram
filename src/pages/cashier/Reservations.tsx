@@ -22,7 +22,7 @@ export const Reservations = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-          <Calendar className="w-6 h-6 text-pink-500" /> Stol bron qilish
+          <Calendar className="w-6 h-6 text-pink-500" /> Xona bron qilish
         </h1>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -55,7 +55,7 @@ export const Reservations = () => {
                 </div>
                 <div>
                   <div className="text-xs text-slate-500">Odam soni</div>
-                  <div className="font-semibold">{res.guests} kishi, {res.tableNumber}-stol</div>
+                  <div className="font-semibold">{res.guests} kishi, {res.tableNumber}-xona</div>
                 </div>
               </div>
             </div>
@@ -97,7 +97,7 @@ export const Reservations = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Stol bron qilish</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Xona bron qilish</h2>
             <form onSubmit={handleAddReservation} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mijoz ismi</label>
@@ -119,7 +119,7 @@ export const Reservations = () => {
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Stol raqami</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Xona raqami</label>
                   <input type="number" min="1" value={newReservation.tableNumber} onChange={e => setNewReservation({...newReservation, tableNumber: Number(e.target.value)})} className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none" required />
                 </div>
                 <div className="flex-1">

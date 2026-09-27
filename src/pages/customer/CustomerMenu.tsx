@@ -106,7 +106,7 @@ export const CustomerMenu = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">Oshxona</h1>
-              <p className="text-xs text-slate-500 font-medium">Stol: {tableId?.replace('t', '')}</p>
+              <p className="text-xs text-slate-500 font-medium">Xona: {tableId?.replace('t', '')}</p>
             </div>
           </div>
           <button onClick={callWaiter} className="flex items-center justify-center w-10 h-10 bg-amber-50 text-amber-600 rounded-xl relative shadow-sm hover:bg-amber-100 transition-colors">

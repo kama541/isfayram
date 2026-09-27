@@ -276,7 +276,7 @@ export const Reports = () => {
                 <StatCard label="Bekor qilinganlar" value={String(filteredOrders.filter(o => o.status === 'cancelled').length)} icon={<X className="w-5 h-5 text-red-400" />} />
               </div>
               <DataTable
-                headers={['№', 'Sana', 'Stol / Manba', 'Holati', 'Summa']}
+                headers={['№', 'Sana', 'Xona / Manba', 'Holati', 'Summa']}
                 rows={filteredOrders.slice().reverse().map(o => [
                   `#${formatOrderId(o.id)}`,
                   formatDate(o.createdAt),
@@ -295,7 +295,7 @@ export const Reports = () => {
                 <StatCard label="Yo'qotilgan summa" value={formatCurrency(otmenlarData.total)} icon={<TrendingUp className="w-5 h-5 text-red-400" />} highlight="red" />
               </div>
               <DataTable
-                headers={['№', 'Stol', 'Sana', 'Summa', 'Ofitsiant']}
+                headers={['№', 'Xona', 'Sana', 'Summa', 'Ofitsiant']}
                 rows={otmenlarData.cancelled.map(o => [
                   `#${formatOrderId(o.id)}`, o.tableId || 'S-oboy',
                   new Date(o.createdAt).toLocaleString('uz-UZ'),

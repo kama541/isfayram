@@ -12,7 +12,7 @@ export const WaiterDashboard = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Ofitsiant Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Stollar holati va chaqiriqlar</p>
+          <p className="text-slate-500 text-sm mt-1">Xonalar holati va chaqiriqlar</p>
         </div>
         <Link 
           to="/waiter/new-order" 

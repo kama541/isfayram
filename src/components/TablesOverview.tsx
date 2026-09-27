@@ -13,7 +13,7 @@ export const TablesOverview = () => {
   const handleTableClick = (tableId: string) => {
     const activeOrder = orders.find(o => o.tableId === tableId && o.status !== 'paid' && o.status !== 'cancelled');
     if (activeOrder && !isCashierOrAdmin && activeOrder.waiterId !== currentUser?.id) {
-      alert("Bu stolda boshqa ofitsiantning buyurtmasi bor!");
+      alert("Bu xonada boshqa ofitsiantning buyurtmasi bor!");
       return;
     }
     const rootRole = window.location.pathname.startsWith('/cashier') ? 'cashier' : 'waiter';

@@ -70,7 +70,7 @@ export const NewOrder = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleSubmit = () => {
-    if (!selectedTable) return alert('Stolni tanlang!');
+    if (!selectedTable) return alert('Xonani tanlang!');
     if (cart.length === 0) return alert('Buyurtma bo\'sh!');
 
     const mappedItems = cart.map(i => ({
@@ -187,7 +187,7 @@ export const NewOrder = () => {
             onChange={(e) => setSelectedTable(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
           >
-            <option value="">Stolni tanlang (Yoki S-oboy)</option>
+            <option value="">Xonani tanlang (Yoki S-oboy)</option>
             <option value="takeaway" className="font-bold text-blue-600">S-oboy (Olib ketish)</option>
             {tables.filter(t => t.status === 'available' || t.id === selectedTable).map(t => (
               <option key={t.id} value={t.id}>{t.number} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
@@ -295,7 +295,7 @@ export const NewOrder = () => {
         <div key={catName} className="p-4 w-[80mm] mx-auto" style={{ pageBreakAfter: 'always' }}>
           <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
           <div className="text-center mb-4 mt-2">
-            <p className="text-xl font-bold">Stol: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
+            <p className="text-xl font-bold">Xona: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
             <p className="text-sm">Ofitsiant: {currentUser?.name || 'Kassir'}</p>
             <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
           </div>
