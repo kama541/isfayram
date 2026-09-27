@@ -11,7 +11,7 @@ const adminLinks = [
   { name: 'Xodimlar', path: '/admin/staff', icon: Users },
   { name: 'Mijozlar', path: '/admin/customers', icon: UserSquare2 },
   { name: 'Obuna', path: '/admin/subscription', icon: CreditCard },
-  { name: 'Buyurtmalar Tarixi', path: '/admin/orders', icon: ClipboardList },
+
   { name: 'HR Kabinet', path: '/admin/hr', icon: UserCog, hasSubmenu: true },
   { name: 'Hisobotlar', path: '/admin/reports', icon: BarChart3 },
   { name: 'Kassir Panel', path: '/cashier', icon: ClipboardList },

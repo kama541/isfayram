@@ -1,14 +1,15 @@
-import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X } from 'lucide-react';
+import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatDate } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 
-type ReportSection = 'sotuvlar' | 'otmenlar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
+type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
 type DishTab = 'taomlar' | 'modifikatorlar' | 'xizmatlar';
 
 const sectionIcons: Record<ReportSection, any> = {
   sotuvlar: TrendingUp,
+  buyurtmalar: ClipboardList,
   otmenlar: X,
   seyflar: Wallet,
   hisoblar: BarChart3,
@@ -19,6 +20,7 @@ const sectionIcons: Record<ReportSection, any> = {
 
 const sectionLabels: Record<ReportSection, string> = {
   sotuvlar: 'Sotuvlar',
+  buyurtmalar: 'Buyurtmalar',
   otmenlar: 'Otmenlar',
   seyflar: 'Seyflar',
   hisoblar: 'Hisoblar',
@@ -73,8 +75,14 @@ const SummaryRow = ({ label, value, color, bold }: { label: string; value: strin
 };
 
 export const Reports = () => {
-  const { orders, menuItems, categories, employees, expenses } = useStore();
+  const { orders, menuItems, categories, employees, expenses, tables } = useStore();
   const { reservations } = useLocalStore();
+
+  const getTableNumber = (tableId: string | undefined | null) => {
+    if (!tableId) return 'S-oboy (Olib ketish)';
+    const table = tables.find(t => t.id === tableId);
+    return table ? table.number : `ID:${tableId.substring(0, 4)}...`;
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSection, setActiveSection] = useState<ReportSection>('sotuvlar');
@@ -257,6 +265,26 @@ export const Reports = () => {
                 headers={['Taom', 'Kategoriya', 'Miqdori', 'Tushum']}
                 rows={sotuvlarData.items.map(i => [i.name, i.category, String(i.quantity), formatCurrency(i.revenue)])}
                 emptyText="Ushbu kunlarda to'langan buyurtma yo'q" />
+            </div>
+          )}
+
+          {activeSection === 'buyurtmalar' && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap gap-4">
+                <StatCard label="Jami buyurtmalar" value={String(filteredOrders.length)} icon={<ShoppingBag className="w-5 h-5 text-blue-400" />} />
+                <StatCard label="To'langanlar" value={String(filteredOrders.filter(o => o.status === 'paid').length)} icon={<TrendingUp className="w-5 h-5 text-emerald-400" />} />
+                <StatCard label="Bekor qilinganlar" value={String(filteredOrders.filter(o => o.status === 'cancelled').length)} icon={<X className="w-5 h-5 text-red-400" />} />
+              </div>
+              <DataTable
+                headers={['№', 'Sana', 'Stol / Manba', 'Holati', 'Summa']}
+                rows={filteredOrders.slice().reverse().map(o => [
+                  `#${o.id.slice(0, 8)}`,
+                  formatDate(o.createdAt),
+                  `${getTableNumber(o.tableId)} (${o.waiterId ? employees.find(e => e.id === o.waiterId)?.fullName || 'Xodim' : 'Mijoz'})`,
+                  o.status === 'paid' ? 'To\'langan' : o.status === 'cancelled' ? 'Bekor qilingan' : o.status,
+                  formatCurrency(o.totalAmount)
+                ])}
+                emptyText="Tanlangan vaqt oralig'ida buyurtmalar topilmadi" />
             </div>
           )}
 
