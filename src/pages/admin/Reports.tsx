@@ -30,7 +30,7 @@ const sectionLabels: Record<ReportSection, string> = {
 const StatCard = ({ label, value, icon, highlight }: { label: string; value: string; icon: React.ReactNode; highlight?: 'green' | 'red' | 'amber' }) => {
   const colors: Record<string, string> = { green: 'text-emerald-400', red: 'text-red-400', amber: 'text-amber-400' };
   return (
-    <div className="bg-[#2a3143] border border-white/5 rounded-2xl p-5 min-w-[180px] flex-1">
+    <div className="bg-[#2a3143] border border-white/5 rounded-2xl p-5">
       <div className="flex items-center gap-2 text-slate-400 text-sm font-medium mb-2">
         {icon}<span>{label}</span>
       </div>
@@ -245,7 +245,7 @@ export const Reports = () => {
 
           {activeSection === 'sotuvlar' && (
             <div className="space-y-6">
-              <div className="flex flex-wrap gap-4">
+              <div className="grid grid-cols-3 xl:grid-cols-6 gap-3">
                 <StatCard label="Tushum" value={formatCurrency(sotuvlarData.tushum)} icon={<TrendingUp className="w-5 h-5 text-emerald-400" />} />
                 <StatCard label="Buyurtmalar" value={String(sotuvlarData.ordersCount)} icon={<ShoppingBag className="w-5 h-5 text-blue-400" />} />
                 <StatCard label="Taomlar turlari" value={String(sotuvlarData.sotilganTaomlar)} icon={<Package className="w-5 h-5 text-amber-400" />} />

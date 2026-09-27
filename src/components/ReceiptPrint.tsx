@@ -11,9 +11,12 @@ const formatCurrency = (amount: number) => {
 };
 
 export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(({ order }, ref) => {
-  const { menuItems } = useStore();
+  const { menuItems, tables } = useStore();
   
   if (!order) return null;
+
+  const table = tables.find(t => t.id === order.tableId);
+  const tableLabel = table ? `${table.number}-stol` : (order.tableId === 'takeaway' ? 'S-oboy' : order.tableId?.slice(0, 8) || '-');
 
   const tipAmount = order.totalAmount * 0.1;
   const grandTotal = order.totalAmount + tipAmount;
@@ -24,7 +27,7 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
         <img src="/logo.png" alt="ISFARYAM" className="w-32 mx-auto mb-3 grayscale" />
         <p className="text-xs">Chipta/Chek №: {order.id.slice(0, 8)}</p>
         <p className="text-xs">Sana: {new Date(order.createdAt).toLocaleString('uz-UZ')}</p>
-        <p className="text-xs">Stol: {order.tableId.replace('t', '')}</p>
+        <p className="text-xs">Stol: {tableLabel}</p>
       </div>
 
       <div className="mb-4">
