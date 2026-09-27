@@ -127,9 +127,11 @@ export const Reports = () => {
         map.set(item.menuItemId, { id: item.menuItemId, name: mi.name, category: cat?.name || "Noma'lum", quantity: item.quantity, revenue: item.price * item.quantity });
       }
     }));
-    const items = Array.from(map.values()).sort((a, b) => b.quantity - a.quantity);
+    const items = activeDishTab === 'taomlar' 
+      ? Array.from(map.values()).sort((a, b) => b.quantity - a.quantity)
+      : [];
     return { tushum, cashAmount, cardAmount, sotilganTaomlar: items.length, totalUnits, items, ordersCount: paid.length };
-  }, [filteredOrders, menuItems, categories, searchTerm, selectedCategory]);
+  }, [filteredOrders, menuItems, categories, searchTerm, selectedCategory, activeDishTab]);
 
   // OTMENLAR
   const otmenlarData = useMemo(() => {

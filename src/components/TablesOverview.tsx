@@ -10,10 +10,12 @@ export const TablesOverview = () => {
   const storedUser = localStorage.getItem('currentUser');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const isCashierOrAdmin = window.location.pathname.startsWith('/cashier') || window.location.pathname.startsWith('/admin');
+  const actingWaiterId = localStorage.getItem('adminActingAsWaiter');
+  const activeWaiterId = currentUser?.role === 'admin' ? actingWaiterId : currentUser?.id;
 
   const handleTableClick = (tableId: string) => {
     const activeOrder = orders.find(o => o.tableId === tableId && o.status !== 'paid' && o.status !== 'cancelled');
-    if (activeOrder && !isCashierOrAdmin && activeOrder.waiterId !== currentUser?.id) {
+    if (activeOrder && !isCashierOrAdmin && activeOrder.waiterId !== activeWaiterId) {
       alert("Bu xonada boshqa ofitsiantning buyurtmasi bor!");
       return;
     }
@@ -77,7 +79,7 @@ export const TablesOverview = () => {
             <div
               key={order.id}
               onClick={() => {
-                if (!isCashierOrAdmin && order.waiterId !== currentUser?.id) {
+                if (!isCashierOrAdmin && order.waiterId !== activeWaiterId) {
                   alert("Bu buyurtmani boshqa ofitsiant olgan!");
                   return;
                 }

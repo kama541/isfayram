@@ -1,5 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Building2, Users, UserSquare2, CreditCard, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Building2, Users, UserSquare2, CreditCard, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings, UserIcon, X } from 'lucide-react';
+import { useState } from 'react';
+import { useStore } from '../store/useStore';
 import type { Role } from '../types';
 
 interface SidebarProps {
@@ -35,9 +37,20 @@ const waiterLinks = [
 
 export const Sidebar = ({ role }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { employees } = useStore();
+  const waiters = employees.filter(e => e.role === 'waiter');
+  const [showWaiterModal, setShowWaiterModal] = useState(false);
   const links = role === 'admin' ? adminLinks : role === 'cashier' ? cashierLinks : waiterLinks;
 
+  const handleWaiterSelect = (waiterId: string) => {
+    localStorage.setItem('adminActingAsWaiter', waiterId);
+    setShowWaiterModal(false);
+    navigate('/waiter');
+  };
+
   return (
+    <>
     <aside className="w-[280px] bg-slate-900 text-slate-300 h-screen sticky top-0 flex flex-col z-20 transition-colors duration-200 shadow-xl overflow-hidden">
       <div className="p-6 pb-2 mt-4">
         <div className="text-white font-black tracking-widest text-2xl mb-8 flex items-center gap-3">
@@ -55,6 +68,25 @@ export const Sidebar = ({ role }: SidebarProps) => {
             {adminLinks.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
+              if (link.path === '/waiter') {
+                return (
+                  <div key={link.path}>
+                    <button
+                      onClick={() => setShowWaiterModal(true)}
+                      className={`w-full group flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-white/10 text-white font-bold' 
+                          : 'text-slate-300 hover:bg-white/5 hover:text-white font-medium'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5 opacity-80" />
+                        <span className="text-[15px]">{link.name}</span>
+                      </div>
+                    </button>
+                  </div>
+                );
+              }
               return (
                 <div key={link.path}>
                   <Link
@@ -71,7 +103,6 @@ export const Sidebar = ({ role }: SidebarProps) => {
                     </div>
 
                   </Link>
-
                 </div>
               );
             })}
@@ -132,5 +163,39 @@ export const Sidebar = ({ role }: SidebarProps) => {
         </div>
       </div>
     </aside>
+
+    {showWaiterModal && (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Qaysi ofitsiant nomidan kirasiz?</h2>
+            <button onClick={() => setShowWaiterModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="p-6 max-h-[60vh] overflow-y-auto space-y-2">
+            {waiters.map(waiter => (
+              <button
+                key={waiter.id}
+                onClick={() => handleWaiterSelect(waiter.id)}
+                className="w-full flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-blue-500 rounded-2xl transition-colors text-left"
+              >
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 dark:text-white">{waiter.fullName}</h3>
+                  <p className="text-sm text-slate-500">PIN: {waiter.pinCode}</p>
+                </div>
+              </button>
+            ))}
+            {waiters.length === 0 && (
+              <p className="text-center text-slate-500 py-4">Ofitsiantlar topilmadi</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };

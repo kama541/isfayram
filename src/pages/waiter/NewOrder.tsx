@@ -13,6 +13,8 @@ export const NewOrder = () => {
   const storedUser = localStorage.getItem('currentUser');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const isCashier = currentUser?.role === 'cashier';
+  const actingWaiterId = localStorage.getItem('adminActingAsWaiter');
+  const activeWaiterId = currentUser?.role === 'admin' ? actingWaiterId : currentUser?.id;
 
   const [activeCategory, setActiveCategory] = useState('popular');
   const [selectedTable, setSelectedTable] = useState(tableParam || '');
@@ -23,7 +25,7 @@ export const NewOrder = () => {
   const activeOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'paid' && o.status !== 'cancelled') : null;
 
   React.useEffect(() => {
-    if (activeOrder && currentUser?.role === 'waiter' && !localStorage.getItem('adminUser') && activeOrder.waiterId !== currentUser.id) {
+    if (activeOrder && !localStorage.getItem('adminUser') && currentUser?.role !== 'admin' && activeOrder.waiterId !== currentUser?.id) {
       alert("Siz bu buyurtmaga kirolmaysiz. U boshqa ofitsiantga tegishli!");
       navigate('/waiter');
     }
@@ -85,7 +87,7 @@ export const NewOrder = () => {
     } else {
       createOrder({
         tableId: selectedTable,
-        waiterId: isCashier && selectedWaiter ? selectedWaiter : (currentUser?.id || undefined),
+        waiterId: isCashier && selectedWaiter ? selectedWaiter : (activeWaiterId || undefined),
         status: 'pending',
         items: mappedItems,
         totalAmount
@@ -296,7 +298,7 @@ export const NewOrder = () => {
           <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
           <div className="text-center mb-4 mt-2">
             <p className="text-xl font-bold">Xona: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
-            <p className="text-sm">Ofitsiant: {currentUser?.name || 'Kassir'}</p>
+            <p className="text-sm">Ofitsiant: {currentUser?.role === 'admin' ? (employees.find(e => e.id === activeWaiterId)?.fullName || 'Noma\'lum') : (currentUser?.name || 'Kassir')}</p>
             <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
           </div>
           <div className="border-t-2 border-black border-dashed pt-4 mb-4">
