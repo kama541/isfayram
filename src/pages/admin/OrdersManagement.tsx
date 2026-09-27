@@ -1,9 +1,13 @@
 import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { Filter, Download } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 export const OrdersManagement = () => {
   const { orders, tables, employees } = useStore();
+  const [showFilter, setShowFilter] = useState(false);
+  const [filterDate, setFilterDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const getTableNumber = (tableId: string | undefined | null) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -11,19 +15,67 @@ export const OrdersManagement = () => {
     return table ? table.number : `ID:${tableId.substring(0, 4)}...`;
   };
 
+  const filteredOrders = useMemo(() => {
+    return orders.slice().reverse().filter(o => {
+      let match = true;
+      if (filterDate && !o.createdAt.startsWith(filterDate)) match = false;
+      if (filterStatus && o.status !== filterStatus) match = false;
+      return match;
+    });
+  }, [orders, filterDate, filterStatus]);
+
+  const handleExport = () => {
+    let csv = "Buyurtma ID,Sana,Stol/Manba,Holati,Summa\n";
+    filteredOrders.forEach(o => {
+      const t = getTableNumber(o.tableId);
+      const w = o.waiterId ? employees.find(e => e.id === o.waiterId)?.fullName || 'Xodim' : 'Mijoz';
+      csv += `#${formatOrderId(o.id)},${formatDate(o.createdAt)},"${t} (${w})",${o.status},${o.totalAmount}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `buyurtmalar_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
   return (
     <div className="p-8 space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center relative">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Barcha Buyurtmalar</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Tarixdagi barcha tranzaksiyalar va buyurtmalar ro'yxati</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 transition-colors shadow-sm">
-            <Filter className="w-4 h-4" />
-            Filter
-          </button>
-          <button className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-slate-800 dark:hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm shadow-slate-900/20">
+          <div className="relative">
+            <button onClick={() => setShowFilter(!showFilter)} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center gap-2 transition-colors shadow-sm">
+              <Filter className="w-4 h-4" />
+              Filter
+            </button>
+            {showFilter && (
+              <div className="absolute top-12 right-0 bg-[#2a3143] border border-white/10 rounded-xl shadow-2xl p-4 w-64 z-50">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Sana bo'yicha</label>
+                    <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="w-full bg-[#1e2330] text-white rounded-lg px-3 py-2 text-sm border border-white/10" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Holati bo'yicha</label>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full bg-[#1e2330] text-white rounded-lg px-3 py-2 text-sm border border-white/10">
+                      <option value="">Barchasi</option>
+                      <option value="paid">To'langan</option>
+                      <option value="cancelled">Bekor qilingan</option>
+                      <option value="new">Yangi</option>
+                    </select>
+                  </div>
+                  <button onClick={() => { setFilterDate(''); setFilterStatus(''); }} className="w-full bg-white/5 hover:bg-white/10 text-white rounded-lg px-3 py-2 text-sm transition-colors">
+                    Filterni tozalash
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <button onClick={handleExport} className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-slate-800 dark:hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm shadow-slate-900/20">
             <Download className="w-4 h-4" />
             Eksport
           </button>
@@ -43,7 +95,7 @@ export const OrdersManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-              {orders.slice().reverse().map(order => (
+              {filteredOrders.map(order => (
                 <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
                   <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">#{formatOrderId(order.id)}</td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatDate(order.createdAt)}</td>
