@@ -1,17 +1,18 @@
-import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList } from 'lucide-react';
+import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList, Grid } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 
-type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
+type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'xonalar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
 type DishTab = 'taomlar' | 'modifikatorlar' | 'xizmatlar';
 
 const sectionIcons: Record<ReportSection, any> = {
   sotuvlar: TrendingUp,
   buyurtmalar: ClipboardList,
   otmenlar: X,
+  xonalar: Grid,
   seyflar: Wallet,
   hisoblar: BarChart3,
   bronlar: Clock,
@@ -23,6 +24,7 @@ const sectionLabels: Record<ReportSection, string> = {
   sotuvlar: 'Sotuvlar',
   buyurtmalar: 'Buyurtmalar',
   otmenlar: 'Otmenlar',
+  xonalar: 'Xonalar',
   seyflar: 'Seyflar',
   hisoblar: 'Hisoblar',
   bronlar: 'Bronlar',
@@ -134,6 +136,20 @@ export const Reports = () => {
     const cancelled = filteredOrders.filter(o => o.status === 'cancelled');
     return { cancelled, total: cancelled.reduce((s, o) => s + o.totalAmount, 0) };
   }, [filteredOrders]);
+
+  // XONALAR
+  const xonalarData = useMemo(() => {
+    const stats: Record<string, { count: number, total: number }> = {};
+    filteredOrders.forEach(o => {
+      const tableLabel = getTableNumber(o.tableId);
+      if (!stats[tableLabel]) stats[tableLabel] = { count: 0, total: 0 };
+      stats[tableLabel].count += 1;
+      if (o.status === 'paid') {
+        stats[tableLabel].total += o.totalAmount;
+      }
+    });
+    return Object.entries(stats).sort((a, b) => b[1].count - a[1].count);
+  }, [filteredOrders, tables]);
 
   // SEYFLAR
   const seyflarData = useMemo(() => {
@@ -307,6 +323,24 @@ export const Reports = () => {
                 ])}
                 onRowClick={(idx) => setSelectedOrder(otmenlarData.cancelled[idx])}
                 emptyText="Bekor qilingan buyurtma yo'q" />
+            </div>
+          )}
+
+          {activeSection === 'xonalar' && (
+            <div className="space-y-6">
+              <div className="flex flex-wrap gap-4">
+                <StatCard label="Jami xonalar" value={String(xonalarData.length)} icon={<Grid className="w-5 h-5 text-blue-400" />} />
+                <StatCard label="Eng ko'p buyurtma qilingan xona" value={xonalarData.length > 0 ? xonalarData[0][0] : '-'} icon={<TrendingUp className="w-5 h-5 text-emerald-400" />} />
+              </div>
+              <DataTable
+                headers={['№', 'Xona nomi', 'Buyurtmalar soni', "To'langan summa"]}
+                rows={xonalarData.map((x, i) => [
+                  String(i + 1),
+                  x[0],
+                  String(x[1].count),
+                  formatCurrency(x[1].total)
+                ])}
+                emptyText="Tanlangan vaqt oralig'ida xonalarda buyurtmalar yo'q" />
             </div>
           )}
 
