@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Trash2, Printer, AlertTriangle } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatOrderId } from '../utils/format';
 
 interface OrderDetailsModalProps {
   order: any;
@@ -61,7 +61,7 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
           <div>
             <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              Buyurtma №{order.id.slice(-4)}
+              Buyurtma №{formatOrderId(order.id)}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
               Holati: {order.status === 'new' ? 'Yangi' : order.status === 'paid' ? "To'langan" : order.status === 'cancelled' ? 'Bekor qilingan' : order.status}

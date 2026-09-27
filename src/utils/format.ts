@@ -19,3 +19,8 @@ export const formatDate = (isoString: string): string => {
     year: 'numeric'
   });
 };
+
+export const formatOrderId = (id: string): string => {
+  if (!id) return '';
+  return parseInt(id.substring(0, 8), 16).toString().substring(0, 6);
+};

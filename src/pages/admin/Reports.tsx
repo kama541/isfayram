@@ -1,6 +1,6 @@
 import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 
@@ -278,7 +278,7 @@ export const Reports = () => {
               <DataTable
                 headers={['№', 'Sana', 'Stol / Manba', 'Holati', 'Summa']}
                 rows={filteredOrders.slice().reverse().map(o => [
-                  `#${o.id.slice(0, 8)}`,
+                  `#${formatOrderId(o.id)}`,
                   formatDate(o.createdAt),
                   `${getTableNumber(o.tableId)} (${o.waiterId ? employees.find(e => e.id === o.waiterId)?.fullName || 'Xodim' : 'Mijoz'})`,
                   o.status === 'paid' ? 'To\'langan' : o.status === 'cancelled' ? 'Bekor qilingan' : o.status,
@@ -297,7 +297,7 @@ export const Reports = () => {
               <DataTable
                 headers={['№', 'Stol', 'Sana', 'Summa', 'Ofitsiant']}
                 rows={otmenlarData.cancelled.map(o => [
-                  `#${o.id.slice(-4)}`, o.tableId || 'S-oboy',
+                  `#${formatOrderId(o.id)}`, o.tableId || 'S-oboy',
                   new Date(o.createdAt).toLocaleString('uz-UZ'),
                   formatCurrency(o.totalAmount),
                   employees.find(e => e.id === o.waiterId)?.fullName || 'Kassir'

@@ -1,5 +1,5 @@
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCurrency, formatDate, formatOrderId } from '../../utils/format';
 import { Filter, Download } from 'lucide-react';
 
 export const OrdersManagement = () => {
@@ -45,7 +45,7 @@ export const OrdersManagement = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {orders.slice().reverse().map(order => (
                 <tr key={order.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">#{order.id.slice(0, 8)}</td>
+                  <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">#{formatOrderId(order.id)}</td>
                   <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{formatDate(order.createdAt)}</td>
                   <td className="px-6 py-4">
                     <div className="text-slate-700 dark:text-slate-200 font-medium">

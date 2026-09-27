@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Calculator, CreditCard, Banknote, Percent, User, Phone } from 'lucide-react';
 import type { Order } from '../types';
+import { formatOrderId } from '../utils/format';
 
 interface PaymentModalProps {
   order: Order | null;
@@ -56,7 +57,7 @@ export const PaymentModal = ({ order, onClose, onPay }: PaymentModalProps) => {
               <Calculator className="w-6 h-6 text-blue-500" />
               To'lovni qabul qilish
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Buyurtma №{order.id.slice(-4)}</p>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Buyurtma №{formatOrderId(order.id)}</p>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
             <X className="w-6 h-6" />

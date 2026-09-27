@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { Category, MenuItem, Table, User, Order, WaiterCall, Employee, Expense, InventoryItem, RecipeIngredient, InventoryTransaction, NotebookEntry } from '../types';
+import { formatOrderId } from '../utils/format';
 
 interface StoreState {
   users: User[];
@@ -512,7 +513,7 @@ export const useStore = create<StoreState>((set, get) => ({
               item_id: invItem.id,
               transaction_type: 'out',
               quantity: totalQuantityToDeduct,
-              notes: `Zakaz #${orderResponse.id.slice(0, 8)}`
+              notes: `Zakaz #${formatOrderId(orderResponse.id)}`
             });
             await supabase.from('inventory_items').update({ current_stock: newStock, updated_at: new Date().toISOString() }).eq('id', invItem.id);
           }
@@ -557,7 +558,7 @@ export const useStore = create<StoreState>((set, get) => ({
             item_id: invItem.id,
             transaction_type: 'out',
             quantity: totalQuantityToDeduct,
-            notes: `Qo'shimcha zakaz #${orderId.slice(0, 8)}`
+            notes: `Qo'shimcha zakaz #${formatOrderId(orderId)}`
           });
           await supabase.from('inventory_items').update({ current_stock: newStock, updated_at: new Date().toISOString() }).eq('id', invItem.id);
         }

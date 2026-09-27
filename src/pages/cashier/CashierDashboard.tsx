@@ -1,6 +1,6 @@
 import { CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency, formatOrderId } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
@@ -108,7 +108,7 @@ export const CashierDashboard = () => {
             return (
               <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
                 <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                  <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
+                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   {order.items.map((i: any, index: number) => {
@@ -160,7 +160,7 @@ export const CashierDashboard = () => {
             return (
               <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors" onClick={() => setSelectedOrderDetails(order)}>
                 <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
-                  <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
+                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   {order.items.map((i: any, index: number) => {
@@ -201,7 +201,7 @@ export const CashierDashboard = () => {
               return (
                 <div key={order.id} className="bg-[#2e7d32] text-white p-5 rounded-3xl shadow-sm flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
                   <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                    <span>№{order.id.slice(-4)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
+                    <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                   </div>
                   <div className="flex flex-col gap-1.5 mt-2">
                     {order.items.map((i: any, index: number) => {
