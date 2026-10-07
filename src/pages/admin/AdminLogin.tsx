@@ -18,7 +18,7 @@ export const AdminLogin = () => {
         localStorage.setItem('adminUser', JSON.stringify({ role: 'admin', email: 'admin' }));
         navigate('/admin');
       } else {
-        setError('Email yoki parol notog\'ri');
+        setError('Parol noto\'g\'ri');
       }
     } catch (err: any) {
       setError(err.message || 'Xatolik yuz berdi');
@@ -28,34 +28,39 @@ export const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg border border-slate-200">
-        <div className="flex flex-col items-center mb-6">
-          <div className="mb-4 shadow-xl rounded-[1.5rem] overflow-hidden drop-shadow-md">
-            <img src="/logo.png" alt="Isfayram Logo" className="h-28 w-auto object-contain scale-110" />
+    <div className="min-h-screen flex items-center justify-center p-4 font-sans" style={{ background: '#13120F' }}>
+      <div className="max-w-md w-full p-8 rounded-3xl shadow-2xl" style={{ background: '#1C1A17', border: '1px solid rgba(212,175,55,0.15)' }}>
+        <div className="flex flex-col items-center mb-8">
+          <div className="mb-5 rounded-[1.5rem] overflow-hidden shadow-2xl" style={{ boxShadow: '0 0 40px rgba(212,175,55,0.15)' }}>
+            <img src="/logo.png" alt="Isfayram Logo" className="h-28 w-auto object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight hidden">Isfayram Admin Panel</h1>
-          <p className="text-slate-500 text-sm mt-2 font-medium">Boshqaruv tizimiga kirish</p>
+          <h1 className="text-2xl font-black tracking-widest uppercase" style={{ color: '#D4AF37', fontFamily: 'serif' }}>ISFAYRAM</h1>
+          <p className="text-sm mt-1 tracking-widest uppercase" style={{ color: '#6C6659' }}>Boshqaruv tizimi</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-400 text-sm text-center">
+          <div className="mb-6 p-4 rounded-xl text-red-400 text-sm text-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5 ml-1">Maxfiy Parol</label>
+            <label className="block text-sm font-medium mb-2 ml-1 tracking-wider uppercase" style={{ color: '#8A8070' }}>Maxfiy Parol</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: '#6C6659' }}>
                 <Lock className="w-5 h-5" />
               </div>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(212,175,55,0.2)',
+                  color: '#F5F2EA',
+                }}
                 placeholder="••••••••"
                 required
               />
@@ -65,16 +70,18 @@ export const AdminLogin = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 font-bold rounded-xl flex items-center justify-center gap-2 mt-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
+            style={{ background: '#D4AF37', color: '#13120F', boxShadow: '0 5px 30px rgba(212,175,55,0.2)' }}
           >
             {loading ? 'Tekshirilmoqda...' : 'Tizimga kirish'}
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        <button 
+        <button
           onClick={() => navigate('/login')}
-          className="w-full mt-6 py-3 flex items-center justify-center gap-2 text-slate-500 hover:text-slate-800 transition-colors"
+          className="w-full mt-5 py-3 flex items-center justify-center gap-2 text-sm transition-colors hover:opacity-80"
+          style={{ color: '#6C6659' }}
         >
           <UtensilsCrossed className="w-4 h-4" />
           Kassa va Ofitsiant bo'limiga qaytish

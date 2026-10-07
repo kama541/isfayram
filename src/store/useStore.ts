@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { Category, MenuItem, Table, User, Order, WaiterCall, Employee, Expense, InventoryItem, RecipeIngredient, InventoryTransaction, NotebookEntry } from '../types';
+import type { ComputerDevice, Category, MenuItem, Table, User, Order, WaiterCall, Employee, Expense, InventoryItem, RecipeIngredient, InventoryTransaction, NotebookEntry, KitchenStation } from '../types';
 import { formatOrderId } from '../utils/format';
 
 interface StoreState {
@@ -16,10 +16,13 @@ interface StoreState {
   recipeIngredients: RecipeIngredient[];
   inventoryTransactions: InventoryTransaction[];
   notebookEntries: NotebookEntry[];
+  kitchenStations: KitchenStation[];
+  computerDevices: ComputerDevice[];
   isLoading: boolean;
   isRealtimeInitialized: boolean;
   isSystemOpen: boolean;
   theme: 'light' | 'dark';
+  receiptSettings: { title: string; address: string; footer1: string; footer2: string };
   
   // Actions
   fetchInitialData: () => Promise<void>;
@@ -43,8 +46,10 @@ interface StoreState {
   createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
   addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<void>;
   updateOrderTable: (orderId: string, newTableId: string) => Promise<void>;
+  updateOrderWaiter: (orderId: string, newWaiterId: string) => Promise<void>;
   updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card' | 'mixed') => void;
   removeOrderItem: (orderId: string, itemId: string, itemTotal: number) => Promise<void>;
+  updateOrderItemQuantity: (orderId: string, itemId: string, newQuantity: number, newTotalPrice: number) => Promise<void>;
   
   createWaiterCall: (tableId: string) => void;
   resolveWaiterCall: (id: string) => void;
@@ -70,6 +75,12 @@ interface StoreState {
   // System actions
   setSystemOpen: (isOpen: boolean) => Promise<void>;
   setTheme: (theme: 'light' | 'dark') => void;
+  updateReceiptSettings: (settings: { title: string; address: string; footer1: string; footer2: string }) => Promise<void>;
+
+  addKitchenStation: (station: Omit<KitchenStation, 'id' | 'isActive'>) => Promise<void>;
+  updateKitchenStation: (station: KitchenStation) => Promise<void>;
+  deleteKitchenStation: (id: string) => Promise<void>;
+  updateOrderItemStatus: (orderId: string, itemId: string, status: any) => Promise<void>;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -85,10 +96,13 @@ export const useStore = create<StoreState>((set, get) => ({
   recipeIngredients: [],
   inventoryTransactions: [],
   notebookEntries: [],
+  kitchenStations: [],
+  computerDevices: [],
   isLoading: true,
   isRealtimeInitialized: false,
   isSystemOpen: true,
   theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
+  receiptSettings: { title: 'Isfayram Kafe', address: 'Quvasoy, UZ', footer1: 'Доставка 95 034 31 15', footer2: 'Спасибо за визит!' },
 
   initRealtime: () => {
     if (get().isRealtimeInitialized) return;
@@ -99,15 +113,25 @@ export const useStore = create<StoreState>((set, get) => ({
          get().silentFetch();
       }).subscribe();
       
+    supabase.channel('public:order_items')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
+         get().silentFetch();
+      }).subscribe();
+      
     supabase.channel('public:waiter_calls')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_calls' }, () => {
          get().silentFetch();
       }).subscribe();
+      
+    supabase.channel('public:computer_devices')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'computer_devices' }, () => {
+         get().silentFetch();
+      }).subscribe();
 
-    // Polling as fallback (60 seconds instead of 10s to prevent site slowdown)
+    // Polling as fallback (5 seconds for fast sync between computers)
     setInterval(() => {
       get().silentFetch();
-    }, 60000);
+    }, 5000);
   },
 
   silentFetch: async () => {
@@ -127,7 +151,9 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: inventoryTransactionsData },
         { data: notebookEntriesData },
         { data: settingsData },
-        { data: paymentsData }
+        { data: paymentsData },
+        { data: kitchenStationsData },
+        { data: computerDevicesData }
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('menu_categories').select('*').order('sort_order'),
@@ -142,22 +168,26 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('recipe_ingredients').select('*'),
         supabase.from('inventory_transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('notebook_entries').select('*').order('created_at', { ascending: false }),
-        supabase.from('settings').select('*').eq('key', 'is_system_open').single(),
-        supabase.from('payments').select('*')
+        supabase.from('settings').select('*'),
+        supabase.from('payments').select('*'),
+        supabase.from('kitchen_stations').select('*'),
+        supabase.from('computer_devices').select('*')
       ]);
 
       const users: User[] = (profilesData || []).map(p => ({ id: p.id, name: p.full_name, role: p.role }));
       const categories: Category[] = (categoriesData || []).map(c => ({ id: c.id, name: c.name }));
       const menuItems: MenuItem[] = (menuItemsData || []).map(m => ({
         id: m.id, categoryId: m.category_id, name: m.name, description: m.description || '',
-        price: Number(m.price), image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500', isAvailable: m.is_available
+        price: Number(m.price), image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500', isAvailable: m.is_available,
+        kitchenStationId: m.kitchen_station_id
       }));
       const tables: Table[] = (tablesData || []).map(t => ({
         id: t.id, number: t.table_number, status: ['available', 'occupied', 'ordered', 'cleaning', 'closed'].includes(t.status) ? t.status as any : 'available', seats: t.capacity
       }));
       const orders: Order[] = (ordersData || []).map(o => {
-        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id).map(oi => ({
-          id: oi.id, menuItemId: oi.menu_item_id, quantity: oi.quantity, price: Number(oi.unit_price), notes: oi.special_instructions || ''
+        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => ({
+          id: oi.id, menuItemId: oi.menu_item_id, quantity: oi.quantity, price: Number(oi.unit_price), notes: oi.special_instructions || '',
+          kitchenStationId: oi.kitchen_station_id, status: oi.status
         }));
         
         const payment = (paymentsData || []).find((p: any) => p.order_id === o.id);
@@ -171,7 +201,8 @@ export const useStore = create<StoreState>((set, get) => ({
         id: c.id, tableId: c.table_id || '', status: c.status === 'new' ? 'pending' : 'resolved', createdAt: c.created_at
       }));
       const employees: Employee[] = (employeesData || []).map(e => ({
-        id: e.id, fullName: e.full_name, role: e.role, pinCode: e.pin_code, isActive: e.is_active, createdAt: e.created_at
+        id: e.id, fullName: e.full_name, role: e.role, pinCode: e.pin_code, isActive: e.is_active, createdAt: e.created_at,
+        kitchenStationIds: e.kitchen_station_ids || []
       }));
       const expenses: Expense[] = (expensesData || []).map(e => ({
         id: e.id, category: e.category, amount: Number(e.amount), paymentDate: e.payment_date, description: e.description, paymentMethod: e.payment_method, createdAt: e.created_at
@@ -188,8 +219,21 @@ export const useStore = create<StoreState>((set, get) => ({
       const notebookEntries: NotebookEntry[] = (notebookEntriesData || []).map(n => ({
         id: n.id, type: n.type, personName: n.person_name, amount: Number(n.amount), notes: n.notes, status: n.status, createdAt: n.created_at, updatedAt: n.updated_at
       }));
+      const kitchenStations: KitchenStation[] = (kitchenStationsData || []).map((k: any) => ({
+        id: k.id, name: k.name, description: k.description, isActive: k.is_active
+      }));
       
-      const isSystemOpen = settingsData ? settingsData.value === 'true' : true;
+      const computerDevices: ComputerDevice[] = (computerDevicesData || []).map((d: any) => ({
+        id: d.id, computer_id: d.computer_id, computer_name: d.computer_name, assigned_role: d.assigned_role, status: d.status, registered_at: d.registered_at, registered_by: d.registered_by, last_seen_at: d.last_seen_at
+      }));
+
+      const isSystemOpen = settingsData ? settingsData.find((s: any) => s.key === 'is_system_open')?.value !== 'false' : true;
+      const receiptSettings = {
+        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || 'Isfayram Kafe',
+        address: settingsData?.find((s: any) => s.key === 'receipt_address')?.value || 'Quvasoy, UZ',
+        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || 'Доставка 95 034 31 15',
+        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value || 'Спасибо за визит!'
+      };
 
       const state = get();
       const newState: any = {};
@@ -206,7 +250,10 @@ export const useStore = create<StoreState>((set, get) => ({
       if (JSON.stringify(state.recipeIngredients) !== JSON.stringify(recipeIngredients)) newState.recipeIngredients = recipeIngredients;
       if (JSON.stringify(state.inventoryTransactions) !== JSON.stringify(inventoryTransactions)) newState.inventoryTransactions = inventoryTransactions;
       if (JSON.stringify(state.notebookEntries) !== JSON.stringify(notebookEntries)) newState.notebookEntries = notebookEntries;
+      if (JSON.stringify(state.kitchenStations) !== JSON.stringify(kitchenStations)) newState.kitchenStations = kitchenStations;
+      if (JSON.stringify(state.computerDevices) !== JSON.stringify(computerDevices)) newState.computerDevices = computerDevices;
       if (state.isSystemOpen !== isSystemOpen) newState.isSystemOpen = isSystemOpen;
+      if (JSON.stringify(state.receiptSettings) !== JSON.stringify(receiptSettings)) newState.receiptSettings = receiptSettings;
 
       if (Object.keys(newState).length > 0) {
         set(newState);
@@ -235,7 +282,9 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: inventoryTransactionsData },
         { data: notebookEntriesData },
         { data: settingsData },
-        { data: paymentsData }
+        { data: paymentsData },
+        { data: kitchenStationsData },
+        { data: computerDevicesData }
       ] = await Promise.all([
         supabase.from('profiles').select('*'),
         supabase.from('menu_categories').select('*').order('sort_order'),
@@ -250,8 +299,10 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('recipe_ingredients').select('*'),
         supabase.from('inventory_transactions').select('*').order('created_at', { ascending: false }),
         supabase.from('notebook_entries').select('*').order('created_at', { ascending: false }),
-        supabase.from('settings').select('*').eq('key', 'is_system_open').single(),
-        supabase.from('payments').select('*')
+        supabase.from('settings').select('*'),
+        supabase.from('payments').select('*'),
+        supabase.from('kitchen_stations').select('*'),
+        supabase.from('computer_devices').select('*')
       ]);
 
       const users: User[] = (profilesData || []).map(p => ({
@@ -272,7 +323,8 @@ export const useStore = create<StoreState>((set, get) => ({
         description: m.description || '',
         price: Number(m.price),
         image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500',
-        isAvailable: m.is_available
+        isAvailable: m.is_available,
+        kitchenStationId: m.kitchen_station_id
       }));
 
       const tables: Table[] = (tablesData || []).map(t => ({
@@ -283,12 +335,14 @@ export const useStore = create<StoreState>((set, get) => ({
       }));
 
       const orders: Order[] = (ordersData || []).map(o => {
-        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id).map(oi => ({
+        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => ({
           id: oi.id,
           menuItemId: oi.menu_item_id,
           quantity: oi.quantity,
           price: Number(oi.unit_price),
-          notes: oi.special_instructions || ''
+          notes: oi.special_instructions || '',
+          kitchenStationId: oi.kitchen_station_id,
+          status: oi.status
         }));
         
         const payment = (paymentsData || []).find(p => p.order_id === o.id);
@@ -319,7 +373,8 @@ export const useStore = create<StoreState>((set, get) => ({
         role: e.role,
         pinCode: e.pin_code,
         isActive: e.is_active,
-        createdAt: e.created_at
+        createdAt: e.created_at,
+        kitchenStationIds: e.kitchen_station_ids || []
       }));
 
       const expenses: Expense[] = (expensesData || []).map(e => ({
@@ -372,12 +427,32 @@ export const useStore = create<StoreState>((set, get) => ({
         updatedAt: n.updated_at
       }));
 
-      const isSystemOpen = settingsData ? settingsData.value === 'true' : true;
+      const kitchenStations: KitchenStation[] = (kitchenStationsData || []).map((k: any) => ({
+        id: k.id,
+        name: k.name,
+        description: k.description,
+        isActive: k.is_active
+      }));
+
+      const computerDevices: ComputerDevice[] = (computerDevicesData || []).map((d: any) => ({
+        id: d.id, computer_id: d.computer_id, computer_name: d.computer_name, assigned_role: d.assigned_role, status: d.status, registered_at: d.registered_at, registered_by: d.registered_by, last_seen_at: d.last_seen_at
+      }));
+
+      const isSystemOpen = settingsData ? settingsData.find((s: any) => s.key === 'is_system_open')?.value !== 'false' : true;
+      const receiptSettings = {
+        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || 'Isfayram Kafe',
+        address: settingsData?.find((s: any) => s.key === 'receipt_address')?.value || 'Quvasoy, UZ',
+        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || 'Доставка 95 034 31 15',
+        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value || 'Спасибо за визит!'
+      };
 
       set({ 
         users, categories, menuItems, tables, orders, waiterCalls, employees, expenses, 
         inventoryItems, recipeIngredients, inventoryTransactions, notebookEntries,
+        kitchenStations,
+        computerDevices,
         isSystemOpen,
+        receiptSettings,
         isLoading: false 
       });
     } catch (error) {
@@ -388,7 +463,8 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addCategory: async (category) => {
-    await supabase.from('menu_categories').insert({ name: category.name, sort_order: 0 });
+    const { error } = await supabase.from('menu_categories').insert({ id: category.id, name: category.name, sort_order: 0 });
+    if (error) alert("Xatolik: " + error.message);
     get().silentFetch();
   },
   
@@ -421,7 +497,8 @@ export const useStore = create<StoreState>((set, get) => ({
       description: updated.description,
       price: updated.price,
       image_url: updated.image,
-      is_available: updated.isAvailable
+      is_available: updated.isAvailable,
+      kitchen_station_id: updated.kitchenStationId || null
     }).eq('id', updated.id);
     get().silentFetch();
   },
@@ -437,25 +514,28 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addTable: async (table) => {
-    await supabase.from('tables').insert({
+    const { error } = await supabase.from('tables').insert({
       table_number: table.number,
       capacity: table.seats,
       status: table.status || 'available'
     });
+    if (error) throw error;
     get().silentFetch();
   },
 
   updateTable: async (table) => {
-    await supabase.from('tables').update({
+    const { error } = await supabase.from('tables').update({
       table_number: table.number,
       capacity: table.seats,
       status: table.status
     }).eq('id', table.id);
+    if (error) throw error;
     get().silentFetch();
   },
 
   deleteTable: async (id) => {
-    await supabase.from('tables').delete().eq('id', id);
+    const { error } = await supabase.from('tables').delete().eq('id', id);
+    if (error) throw error;
     get().silentFetch();
   },
 
@@ -484,13 +564,18 @@ export const useStore = create<StoreState>((set, get) => ({
     }
 
     if (orderResponse) {
-      const itemsToInsert = orderData.items.map(item => ({
-        order_id: orderResponse.id,
-        menu_item_id: item.menuItemId,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity
-      }));
+      const itemsToInsert = orderData.items.map(item => {
+        const menuItem = get().menuItems.find(m => m.id === item.menuItemId);
+        return {
+          order_id: orderResponse.id,
+          menu_item_id: item.menuItemId,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+          kitchen_station_id: menuItem?.kitchenStationId || null,
+          status: 'pending'
+        };
+      });
       await supabase.from('order_items').insert(itemsToInsert);
       
       // Update table status to occupied
@@ -527,13 +612,18 @@ export const useStore = create<StoreState>((set, get) => ({
 
   addItemsToOrder: async (orderId, items, additionalAmount) => {
     // 1. Insert new items
-    const itemsToInsert = items.map(item => ({
-      order_id: orderId,
-      menu_item_id: item.menuItemId,
-      quantity: item.quantity,
-      unit_price: item.price,
-      total_price: item.price * item.quantity
-    }));
+    const itemsToInsert = items.map(item => {
+      const menuItem = get().menuItems.find(m => m.id === item.menuItemId);
+      return {
+        order_id: orderId,
+        menu_item_id: item.menuItemId,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+        kitchen_station_id: menuItem?.kitchenStationId || null,
+        status: 'pending'
+      };
+    });
     await supabase.from('order_items').insert(itemsToInsert);
 
     // 2. Fetch current order to update total amount
@@ -585,6 +675,11 @@ export const useStore = create<StoreState>((set, get) => ({
     
     get().silentFetch();
   },
+
+  updateOrderWaiter: async (orderId, newWaiterId) => {
+    await supabase.from('orders').update({ waiter_id: newWaiterId, updated_at: new Date().toISOString() }).eq('id', orderId);
+    get().silentFetch();
+  },
   
   updateOrderStatus: async (id, status, paymentMethod) => {
     const updateData: any = { status, updated_at: new Date().toISOString() };
@@ -604,7 +699,7 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }
 
-    if (status === 'cancelled') {
+    if (status === 'cancelled' || status === 'paid') {
       const order = get().orders.find(o => o.id === id);
       if (order && order.tableId && order.tableId !== 'takeaway') {
         await supabase.from('tables').update({ status: 'available' }).eq('id', order.tableId);
@@ -615,16 +710,38 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   removeOrderItem: async (orderId, itemId, itemTotal) => {
-    await supabase.from('order_items').delete().eq('id', itemId);
+    const { data: itemData } = await supabase.from('order_items').select('quantity, special_instructions').eq('id', itemId).single();
+    if (itemData) {
+      const newNote = itemData.special_instructions ? `${itemData.special_instructions} (OTMEN: ${itemData.quantity} ta)` : `(OTMEN: ${itemData.quantity} ta)`;
+      await supabase.from('order_items').update({ quantity: 0, total_price: 0, special_instructions: newNote }).eq('id', itemId);
+    }
+
     const { data: order } = await supabase.from('orders').select('total_amount').eq('id', orderId).single();
     if (order) {
-      const newTotal = order.total_amount - itemTotal;
+      const newTotal = Math.max(0, order.total_amount - itemTotal);
       await supabase.from('orders').update({ total_amount: newTotal }).eq('id', orderId);
       
-      const { data: remainingItems } = await supabase.from('order_items').select('id').eq('order_id', orderId);
-      if (remainingItems && remainingItems.length === 0) {
+      const { data: remainingItems } = await supabase.from('order_items').select('id').eq('order_id', orderId).gt('quantity', 0);
+      if (!remainingItems || remainingItems.length === 0) {
         get().updateOrderStatus(orderId, 'cancelled');
       }
+    }
+    get().silentFetch();
+  },
+
+  updateOrderItemQuantity: async (orderId, itemId, newQuantity, newTotalPrice) => {
+    await supabase.from('order_items').update({ quantity: newQuantity, total_price: newTotalPrice }).eq('id', itemId);
+    const { data: order } = await supabase.from('orders').select('total_amount').eq('id', orderId).single();
+    if (order) {
+       const { data: items } = await supabase.from('order_items').select('total_price').eq('order_id', orderId);
+       const newTotalAmount = items?.reduce((sum, item) => sum + Number(item.total_price), 0) || 0;
+       
+       await supabase.from('orders').update({ total_amount: newTotalAmount }).eq('id', orderId);
+       
+       const currentOrder = get().orders.find(o => o.id === orderId);
+       if (currentOrder?.status === 'paid') {
+         await supabase.from('payments').update({ amount: newTotalAmount }).eq('order_id', orderId);
+       }
     }
     get().silentFetch();
   },
@@ -644,7 +761,8 @@ export const useStore = create<StoreState>((set, get) => ({
       full_name: employee.fullName,
       role: employee.role,
       pin_code: employee.pinCode,
-      is_active: employee.isActive
+      is_active: employee.isActive,
+      kitchen_station_ids: employee.kitchenStationIds || []
     });
     if (!error) {
       get().silentFetch();
@@ -659,7 +777,8 @@ export const useStore = create<StoreState>((set, get) => ({
       full_name: employee.fullName,
       role: employee.role,
       pin_code: employee.pinCode,
-      is_active: employee.isActive
+      is_active: employee.isActive,
+      kitchen_station_ids: employee.kitchenStationIds || []
     }).eq('id', employee.id);
     if (!error) get().silentFetch();
     else console.error(error);
@@ -720,6 +839,22 @@ export const useStore = create<StoreState>((set, get) => ({
     const { error } = await supabase.from('inventory_items').delete().eq('id', id);
     if (!error) get().silentFetch();
     else console.error(error);
+  },
+
+  updateReceiptSettings: async (settings) => {
+    const updates = [
+      { key: 'receipt_title', value: settings.title },
+      { key: 'receipt_address', value: settings.address },
+      { key: 'receipt_footer_1', value: settings.footer1 },
+      { key: 'receipt_footer_2', value: settings.footer2 }
+    ];
+    
+    // We update each key sequentially or use a bulk upsert
+    for (const update of updates) {
+      await supabase.from('settings').upsert({ key: update.key, value: update.value }, { onConflict: 'key' });
+    }
+    
+    get().silentFetch();
   },
 
   addInventoryTransaction: async (tx) => {
@@ -801,5 +936,44 @@ export const useStore = create<StoreState>((set, get) => ({
       document.documentElement.classList.remove('dark');
     }
     set({ theme });
+  },
+
+  deleteNotebookEntry: async (id: string) => {
+    await supabase.from('notebook_entries').delete().eq('id', id);
+    get().silentFetch();
+  },
+
+  addKitchenStation: async (station) => {
+    await supabase.from('kitchen_stations').insert({
+      name: station.name,
+      description: station.description || null
+    });
+    get().silentFetch();
+  },
+
+  updateKitchenStation: async (station) => {
+    await supabase.from('kitchen_stations').update({
+      name: station.name,
+      description: station.description || null,
+      is_active: station.isActive
+    }).eq('id', station.id);
+    get().silentFetch();
+  },
+
+  deleteKitchenStation: async (id) => {
+    await supabase.from('kitchen_stations').delete().eq('id', id);
+    get().silentFetch();
+  },
+
+  updateOrderItemStatus: async (orderId: string, itemId: string, status: any) => {
+    await supabase.from('order_items').update({ status }).eq('id', itemId);
+    
+    // Check if we need to update order status if all items are delivered
+    const order = get().orders.find(o => o.id === orderId);
+    if (order) {
+      // Background logic if needed
+    }
+    
+    get().silentFetch();
   }
 }));

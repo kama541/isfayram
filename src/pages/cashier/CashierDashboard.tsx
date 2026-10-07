@@ -1,6 +1,6 @@
 import { CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { formatCurrency, formatOrderId, formatTableName } from '../../utils/format';
+import { formatCurrency, formatOrderId, formatTableName, getDefaultTableSection } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
 import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
@@ -10,6 +10,7 @@ import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 import { Printer, BookOpen, Power, ListX, X, Check, Calculator, Banknote } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { printReceiptElement } from '../../utils/printReceipt';
 export const CashierDashboard = () => {
   const { orders, tables, updateOrderStatus, isSystemOpen, setSystemOpen, menuItems, updateMenuItemAvailability } = useStore();
   const [printingOrder, setPrintingOrder] = useState<any>(null);
@@ -18,6 +19,16 @@ export const CashierDashboard = () => {
   const [showShiftReport, setShowShiftReport] = useState(false);
   const [paymentOrder, setPaymentOrder] = useState<any>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+  const [activeSection, setActiveSection] = useState('Hammasi');
+
+  const SECTIONS = ["Hammasi", "Ko'cha", "Zal", "Kabina"];
+  const getSections = () => JSON.parse(localStorage.getItem('tableZones_v2') || '{}');
+  const getSection = (tableId: string) => {
+    const saved = getSections()[tableId];
+    if (saved) return saved;
+    const t = useStore.getState().tables.find(x => x.id === tableId);
+    return t ? getDefaultTableSection(t.number) : 'Zal';
+  };
 
   const getTableNumber = (tableId: string) => {
     if (!tableId) return 'S-oboy (Olib ketish)';
@@ -26,15 +37,58 @@ export const CashierDashboard = () => {
   };
 
   const handlePrint = (order: any) => {
-    setPrintingOrder(order);
+    // Prevent duplicate prints (debounce)
+    if ((window as any).__isPrinting) return;
+    (window as any).__isPrinting = true;
+    setTimeout(() => { (window as any).__isPrinting = false; }, 3000);
+
+    // Track print count
+    const printedOrders = JSON.parse(localStorage.getItem('printedOrders') || '{}');
+    const newCount = (printedOrders[order.id] || 0) + 1;
+    printedOrders[order.id] = newCount;
+    localStorage.setItem('printedOrders', JSON.stringify(printedOrders));
+    
+    setPrintingOrder({ ...order, printCount: newCount });
     setTimeout(() => {
-      window.print();
-    }, 100);
+      printReceiptElement(order.id).finally(() => {
+        setTimeout(() => setPrintingOrder(null), 1000);
+      });
+    }, 150);
   };
 
-  const pendingOrders = orders.filter(o => o.status !== 'paid' && o.status !== 'cancelled');
-  const paidToday = orders.filter(o => o.status === 'paid' && new Date(o.updatedAt || o.createdAt).toDateString() === new Date().toDateString());
-  const cancelledOrders = orders.filter(o => o.status === 'cancelled' && new Date(o.createdAt).toDateString() === new Date().toDateString());
+  // Remote print triggers (from waiters' phones) are handled globally by RemotePrintListener
+
+  const getPrintedCount = (orderId: string) => {
+    const printedOrders = JSON.parse(localStorage.getItem('printedOrders') || '{}');
+    return printedOrders[orderId] || 0;
+  };
+
+  const allPendingOrders = orders.filter(o => o.status !== 'paid' && o.status !== 'cancelled');
+  const pendingFiltered = activeSection === 'Hammasi'
+    ? allPendingOrders
+    : allPendingOrders.filter(o => o.tableId === 'takeaway' ? false : getSection(o.tableId) === activeSection);
+    
+  // 1. Ochiqlar (Zakaz berildi / Chek chiqarilmagan)
+  const openOrders = pendingFiltered.filter(o => getPrintedCount(o.id) === 0);
+  // 2. Yopilgan (Zakritiy / Chek chiqarilgan, lekin to'lanmagan)
+  const closedOrders = pendingFiltered.filter(o => getPrintedCount(o.id) > 0);
+  
+  const getLogicalDate = (dateString?: string) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    d.setHours(d.getHours() - 5);
+    return d.toDateString();
+  };
+
+  const todayLogicalDate = getLogicalDate();
+
+  // 3. To'langan (Bugungi smena)
+  const paidToday = orders.filter(o => o.status === 'paid' && getLogicalDate(o.updatedAt || o.createdAt) === todayLogicalDate);
+  
+  // 4. Bekor qilingan (Otmen bo'lganlar - butunlay bekor qilingan yoki ichida otmen qilingan taom borlar)
+  const cancelledOrders = orders.filter(o => 
+    (o.status === 'cancelled' || (o.items && o.items.some((i: any) => i.quantity === 0))) &&
+    getLogicalDate(o.updatedAt || o.createdAt) === todayLogicalDate
+  );
 
   const cashTotal = paidToday.filter(o => o.paymentMethod === 'cash').reduce((sum, o) => sum + o.totalAmount, 0);
   const cardTotal = paidToday.filter(o => o.paymentMethod === 'card').reduce((sum, o) => sum + o.totalAmount, 0);
@@ -50,9 +104,9 @@ export const CashierDashboard = () => {
         <div className="flex gap-3">
           <button
             onClick={() => {
-              if (window.confirm(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi (mijozlar menyuni ko'ra oladi). Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?")) {
+              (window as any).customConfirm(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi (mijozlar menyuni ko'ra oladi). Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?", () => {
                 setSystemOpen(!isSystemOpen);
-              }
+              });
             }}
             className={`px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 ${
               isSystemOpen 
@@ -97,13 +151,29 @@ export const CashierDashboard = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-        {/* Ochiq buyurtmalar (Otkrytye) */}
+      <div className="flex gap-2 flex-wrap mb-2">
+        {SECTIONS.map(sec => (
+          <button
+            key={sec}
+            onClick={() => setActiveSection(sec)}
+            className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-colors ${
+              activeSection === sec
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+            }`}
+          >
+            {sec}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        {/* 1. Ochiq buyurtmalar (Otkrytye) */}
         <div className="space-y-4">
           <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-blue-500" /> Ochiqlar {pendingOrders.length}
+            <Clock className="w-5 h-5 text-blue-500" /> Ochiqlar (Zakaz berildi) {openOrders.length}
           </h2>
-          {pendingOrders.map(order => {
+          {openOrders.map(order => {
             const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
             return (
               <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
@@ -114,7 +184,7 @@ export const CashierDashboard = () => {
                   {order.items.map((i: any, index: number) => {
                     const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
                     return (
-                      <div key={index} className="flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium">
+                      <div key={index} className={`flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
                         <span className="truncate pr-2">{itemName || 'Taom'}</span>
                         <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
                       </div>
@@ -128,13 +198,8 @@ export const CashierDashboard = () => {
                   <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
                     {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})} 
-                    <span className="opacity-70 ml-1">(<TimeElapsed createdAt={order.createdAt} />)</span>
                   </div>
                 </div>
-                <div className="bg-white/10 w-max px-3 py-1.5 rounded-full text-xs font-semibold mt-1">
-                  {order.items.reduce((sum, i) => sum + i.quantity, 0)} taom
-                </div>
-
                 {/* Hover actions */}
                 <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
                   <button onClick={(e) => { e.stopPropagation(); setPaymentOrder(order); }} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
@@ -150,52 +215,59 @@ export const CashierDashboard = () => {
           })}
         </div>
 
-        {/* Bekor qilingan (Zakrytye) */}
+        {/* 2. Yopilgan (Zakritiy) - Precheck printed */}
         <div className="space-y-4">
           <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <X className="w-5 h-5 text-red-500" /> Yopilgan {cancelledOrders.length}
+            <Printer className="w-5 h-5 text-amber-500" /> Yopilgan (Zakritiy) {closedOrders.length}
           </h2>
-          {cancelledOrders.map(order => {
+          {closedOrders.map(order => {
             const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
             return (
-              <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors" onClick={() => setSelectedOrderDetails(order)}>
-                <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
+              <div key={order.id} className="bg-amber-500 hover:bg-amber-600 transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
+                <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
                   <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
                 </div>
                 <div className="flex flex-col gap-1.5 mt-2">
                   {order.items.map((i: any, index: number) => {
                     const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
                     return (
-                      <div key={index} className="flex justify-between items-center bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium opacity-80">
+                      <div key={index} className={`flex justify-between items-center bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
                         <span className="truncate pr-2">{itemName || 'Taom'}</span>
-                        <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
+                        <span className="font-bold shrink-0">{i.quantity} x</span>
                       </div>
                     );
                   })}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                  <div className="bg-black/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
                     {getTableNumber(order.tableId)}
                   </div>
-                  <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                  <div className="bg-black/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
-                    {new Date(order.updatedAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}
+                    {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})} 
                   </div>
                 </div>
-                <div className="bg-slate-300 dark:bg-slate-600 w-max px-3 py-1.5 rounded-full text-xs font-semibold mt-1">
-                  {order.items.reduce((sum, i) => sum + i.quantity, 0)} taom
+                {/* Hover actions */}
+                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                  <button onClick={(e) => { e.stopPropagation(); setPaymentOrder(order); }} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
+                    <Banknote className="w-5 h-5" /> To'lov qilish
+                  </button>
+                  <div className="flex gap-2 w-full mt-1">
+                    <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Qayta Chek</button>
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Ko'rish</button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* To'langan (Oplachennye) */}
-        <div className="space-y-4 lg:col-span-1 xl:col-span-2">
+        {/* 3. To'langan (Oplachennye) */}
+        <div className="space-y-4">
           <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
             <CheckCircle className="w-5 h-5 text-emerald-500" /> To'langan {paidToday.length}
           </h2>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {paidToday.map(order => {
               const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
               return (
@@ -207,7 +279,7 @@ export const CashierDashboard = () => {
                     {order.items.map((i: any, index: number) => {
                       const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
                       return (
-                        <div key={index} className="flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium">
+                        <div key={index} className={`flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
                           <span className="truncate pr-2">{itemName || 'Taom'}</span>
                           <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
                         </div>
@@ -218,26 +290,64 @@ export const CashierDashboard = () => {
                     <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 text-amber-200">
                       {getTableNumber(order.tableId)}
                     </div>
-                    <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      {new Date(order.updatedAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})}
-                    </div>
                   </div>
-                  <div className="bg-white/10 w-max px-3 py-1.5 rounded-full text-xs font-semibold mt-1 flex items-center justify-between">
-                    <span>{order.items.reduce((sum, i) => sum + i.quantity, 0)} taom</span>
-                    <span className="ml-4 opacity-70 capitalize">{order.paymentMethod === 'cash' ? 'Naqd' : 'Karta'}</span>
-                  </div>
-
                   {/* Hover actions */}
-                  <div className="absolute inset-0 bg-[#1b5e20]/90 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-[#1b5e20]/90 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-2">
                     <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
                       <Printer className="w-5 h-5" /> Chek chiqarish
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
+                      Ko'rish
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
+        </div>
+
+        {/* 4. Bekor qilingan (Otmen qilinganlar / Otmen qilingan taomi borlar) */}
+        <div className="space-y-4">
+          <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
+            <X className="w-5 h-5 text-red-500" /> Otmen {cancelledOrders.length}
+          </h2>
+          {cancelledOrders.map(order => {
+            const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
+            const isFullyCancelled = order.status === 'cancelled';
+            return (
+              <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors relative group" onClick={() => setSelectedOrderDetails(order)}>
+                <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
+                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'} {isFullyCancelled ? '(To\'liq otmen)' : '(Qisman otmen)'}</span>
+                </div>
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {order.items.map((i: any, index: number) => {
+                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                    const isCancelledItem = i.quantity === 0;
+                    return (
+                      <div key={index} className={`flex justify-between items-center px-3 py-1.5 rounded-lg text-sm font-medium opacity-80 ${isCancelledItem ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-300 dark:bg-slate-600'}`}>
+                        <span className={`truncate pr-2 ${isCancelledItem ? 'line-through' : ''}`}>{itemName || 'Taom'}</span>
+                        <span className="font-bold shrink-0">{i.quantity} x</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                    {getTableNumber(order.tableId)}
+                  </div>
+                </div>
+                {/* Hover for reprint */}
+                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                  <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
+                    <Printer className="w-5 h-5" /> Chekni qayta chiqarish
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">
+                    Ko'rish
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
       
@@ -338,7 +448,12 @@ export const CashierDashboard = () => {
               </div>
               <button
                 onClick={() => {
-                  window.print();
+                  const electronApi = (window as any).electronApi;
+                  if (electronApi?.isElectron) {
+                    electronApi.printMainWindowSilent();
+                  } else {
+                    window.print();
+                  }
                 }}
                 className="w-full mt-8 bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
               >
@@ -353,10 +468,10 @@ export const CashierDashboard = () => {
         <PaymentModal
           order={paymentOrder}
           onClose={() => setPaymentOrder(null)}
-          onPay={(orderId, method) => {
-            updateOrderStatus(orderId, 'paid', method);
+          onPay={async (orderId, method) => {
+            await updateOrderStatus(orderId, 'paid', method);
             const ord = orders.find(o => o.id === orderId);
-            if (ord) handlePrint(ord);
+            if (ord) handlePrint({ ...ord, status: 'paid', paymentMethod: method });
           }}
         />
       )}

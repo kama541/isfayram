@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Grid, Plus, Edit2, Trash2, X, Check } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import type { Table } from '../../types';
+import { getDefaultTableSection } from '../../utils/format';
 
 export const TablesManagement = () => {
   const { tables, addTable, updateTable, deleteTable } = useStore();
@@ -14,32 +15,59 @@ export const TablesManagement = () => {
     status: 'available' as 'available' | 'occupied' | 'reserved'
   });
 
+  // Section stored in localStorage: { [tableId]: section }
+  const getSections = () => JSON.parse(localStorage.getItem('tableZones_v2') || '{}');
+  const setSection = (tableId: string, section: string) => {
+    const s = getSections();
+    s[tableId] = section;
+    localStorage.setItem('tableZones_v2', JSON.stringify(s));
+  };
+  const getSection = (tableId: string) => {
+    const saved = getSections()[tableId];
+    if (saved) return saved;
+    const t = useStore.getState().tables.find(x => x.id === tableId);
+    return t ? getDefaultTableSection(t.number) : 'Zal';
+  };
+
+  const [editingSection, setEditingSection] = useState('Zal');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingTable) {
-      await updateTable({ ...editingTable, ...formData });
-    } else {
-      await addTable(formData);
+    try {
+      if (editingTable) {
+        await updateTable({ ...editingTable, ...formData });
+        setSection(editingTable.id, editingSection);
+      } else {
+        await addTable(formData);
+      }
+      setIsModalOpen(false);
+      setEditingTable(null);
+      setFormData({ number: '1', seats: 4, status: 'available' });
+      setEditingSection('Zal');
+    } catch (error: any) {
+      alert("Xatolik yuz berdi! Bunday raqamli xona allaqachon mavjud bo'lishi mumkin.");
     }
-    setIsModalOpen(false);
-    setEditingTable(null);
-    setFormData({ number: '1', seats: 4, status: 'available' });
   };
 
   const openEditModal = (table: Table) => {
     setEditingTable(table);
     setFormData({ number: table.number, seats: table.seats, status: table.status });
+    setEditingSection(getSection(table.id));
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Haqiqatan ham bu xonani o'chirmoqchimisiz?")) {
-      await deleteTable(id);
-    }
+    (window as any).customConfirm("Haqiqatan ham bu xonani o'chirmoqchimisiz?", async () => {
+      try {
+        await deleteTable(id);
+      } catch (error) {
+        alert("Xatolik! Bu xonani o'chirib bo'lmaydi, chunki unga bog'langan eski buyurtmalar mavjud. Iltimos, oldin bazani tozalang.");
+      }
+    });
   };
 
   const handleSeed = async () => {
-    if (confirm("9 ta kabinet va 15 ta stol qo'shilsinmi?")) {
+    (window as any).customConfirm("9 ta kabinet va 15 ta stol qo'shilsinmi?", async () => {
       for(let i=1; i<=9; i++) {
         await addTable({ number: `${i}-kabinet`, seats: 4, status: 'available' });
       }
@@ -47,7 +75,7 @@ export const TablesManagement = () => {
         await addTable({ number: `${i}-stol`, seats: 4, status: 'available' });
       }
       alert("Muvaffaqiyatli qo'shildi!");
-    }
+    });
   };
 
   return (
@@ -83,6 +111,7 @@ export const TablesManagement = () => {
               <div>
                 <h3 className="text-xl font-bold text-slate-800 dark:text-white">{table.number}</h3>
                 <p className="text-slate-500 text-sm mt-1">{table.seats} kishilik</p>
+                <span className="text-xs font-semibold mt-1 inline-block px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">{getSection(table.id)}</span>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${
                 table.status === 'available' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -93,11 +122,11 @@ export const TablesManagement = () => {
               </div>
             </div>
 
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-800/90 p-2 rounded-xl backdrop-blur-sm">
-              <button onClick={() => openEditModal(table)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+            <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity bg-white/90 dark:bg-slate-800/90 p-1.5 rounded-xl backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
+              <button onClick={() => openEditModal(table)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Tahrirlash">
                 <Edit2 className="w-4 h-4" />
               </button>
-              <button onClick={() => handleDelete(table.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+              <button onClick={() => handleDelete(table.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="O'chirish">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
@@ -139,6 +168,19 @@ export const TablesManagement = () => {
                   className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 text-slate-800 dark:text-white"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bo'lim</label>
+                <select
+                  value={editingSection}
+                  onChange={e => setEditingSection(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 text-slate-800 dark:text-white"
+                >
+                  <option value="Ko'cha">Ko'cha (Tashqi)</option>
+                  <option value="Zal">Zal (Ichki)</option>
+                  <option value="Kabina">Kabina</option>
+                </select>
               </div>
 
               <div className="pt-4 flex justify-end gap-3">

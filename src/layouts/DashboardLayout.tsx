@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/Sidebar';
-import { Bell, Calendar, Moon, Sun } from 'lucide-react';
+import { Bell, Calendar, Menu } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import type { Role } from '../types';
 
@@ -10,40 +12,62 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
-  const { theme, setTheme } = useStore();
+  const { waiterCalls } = useStore();
+  const pendingCallsCount = waiterCalls.filter(c => c.status === 'pending').length;
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Mobil: sahifa almashganda sidebarni yopish
+  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden font-sans text-slate-900 dark:text-white transition-colors duration-200">
-      <Sidebar role={role} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex h-screen overflow-hidden font-sans" style={{ background: '#13120F', color: '#F5F2EA' }}>
+      <Sidebar role={role} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-20 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 z-10 shrink-0 shadow-sm transition-colors duration-200">
+        <header className="h-14 md:h-16 flex items-center justify-between px-3 md:px-8 shrink-0 z-10"
+          style={{ background: '#1C1A17', borderBottom: '1px solid rgba(212,175,55,0.1)' }}
+        >
           <div className="flex items-center gap-4 flex-1">
+            {/* Breadcrumb area - empty for now */}
+            <button
+              id="mobile-menu-btn"
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-white/5"
+              style={{ color: '#D4AF37', border: '1px solid rgba(212,175,55,0.2)' }}
+              aria-label="Menyu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium">
+          <div className="flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-2 text-sm font-medium px-4 py-1.5 rounded-full"
+              style={{ color: '#8A8070', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.08)' }}
+            >
               <Calendar className="w-4 h-4" />
               <span>{new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             </div>
-            
-            <button 
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-700 rounded-full"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
 
-            <button className="relative p-2 text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-            </button>
+            <div className="relative">
+              <button
+                className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-white/5"
+                style={{ color: '#8A8070', border: '1px solid rgba(212,175,55,0.1)' }}
+              >
+                <Bell className="w-4 h-4" />
+                {pendingCallsCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white font-bold">
+                    {pendingCallsCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900 scrollbar-hide transition-colors duration-200">
-          <div className="mx-auto max-w-7xl p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-hide" style={{ background: '#13120F' }}>
+          <div className="mx-auto max-w-7xl p-3 md:p-6">
             {children}
           </div>
         </main>

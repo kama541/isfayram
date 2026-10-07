@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Trash2, Printer, AlertTriangle } from 'lucide-react';
+import { X, Trash2, Printer, AlertTriangle, Minus, Plus } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { formatCurrency, formatOrderId } from '../utils/format';
 
@@ -17,7 +17,7 @@ interface ConfirmState {
 }
 
 export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModalProps) => {
-  const { menuItems, removeOrderItem } = useStore();
+  const { menuItems, removeOrderItem, updateOrderItemQuantity, employees, updateOrderWaiter } = useStore();
   const [confirm, setConfirm] = useState<ConfirmState>({
     open: false,
     title: '',
@@ -29,29 +29,24 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
     setConfirm({ open: true, title, message, onConfirm });
   };
 
-  const handleRemoveItem = (itemId: string, itemPrice: number, quantity: number, itemName: string) => {
-    askConfirm(
-      'Mahsulotni olib tashlash',
-      `"${itemName}" ni buyurtmadan olib tashlamoqchimisiz?`,
-      async () => {
-        const itemTotal = itemPrice * quantity;
-        await removeOrderItem(order.id, itemId, itemTotal);
-        setConfirm(c => ({ ...c, open: false }));
-        onClose();
-      }
-    );
+  const handleRemoveItem = async (itemId: string, itemPrice: number, quantity: number, itemName: string) => {
+    const itemTotal = itemPrice * quantity;
+    await removeOrderItem(order.id, itemId, itemTotal);
+  };
+
+  const handleUpdateQuantity = (itemId: string, itemPrice: number, currentQuantity: number, itemName: string, change: number) => {
+    const newQuantity = currentQuantity + change;
+    if (newQuantity < 1) {
+      handleRemoveItem(itemId, itemPrice, currentQuantity, itemName);
+      return;
+    }
+    const newTotalPrice = newQuantity * itemPrice;
+    updateOrderItemQuantity(order.id, itemId, newQuantity, newTotalPrice);
   };
 
   const handleCancelOrder = () => {
-    askConfirm(
-      'Buyurtmani bekor qilish',
-      'Butun buyurtmani bekor qilmoqchimisiz? Bu amalni qaytarib bo\'lmaydi.',
-      () => {
-        useStore.getState().updateOrderStatus(order.id, 'cancelled');
-        setConfirm(c => ({ ...c, open: false }));
-        onClose();
-      }
-    );
+    useStore.getState().updateOrderStatus(order.id, 'cancelled');
+    onClose();
   };
 
   return (
@@ -66,6 +61,24 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
             <p className="text-sm text-slate-500 mt-1">
               Holati: {order.status === 'new' ? 'Yangi' : order.status === 'paid' ? "To'langan" : order.status === 'cancelled' ? 'Bekor qilingan' : order.status}
             </p>
+            {order.status !== 'paid' && order.status !== 'cancelled' ? (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-sm text-slate-500 font-medium">Ofitsiant:</span>
+                <select
+                  value={order.waiterId}
+                  onChange={(e) => updateOrderWaiter(order.id, e.target.value)}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium"
+                >
+                  {employees.filter(e => e.role === 'waiter').map(w => (
+                    <option key={w.id} value={w.id}>{w.fullName}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 mt-1 font-medium">
+                Ofitsiant: {employees.find(e => e.id === order.waiterId)?.fullName || "Noma'lum"}
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -83,16 +96,36 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
               return (
                 <div key={index} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                   <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-200">{menuItem?.name || "Noma'lum taom"}</h3>
-                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                      {item.quantity} x {formatCurrency(item.price)}
+                    <h3 className={`font-bold ${item.quantity === 0 ? 'line-through text-red-500/70 dark:text-red-400/70' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {menuItem?.name || "Noma'lum taom"}
+                      {item.quantity === 0 && <span className="ml-2 text-xs text-red-500 no-underline">{item.notes || '(Otmen)'}</span>}
+                    </h3>
+                    <div className={`text-sm font-medium mt-1 ${item.quantity === 0 ? 'line-through text-red-400/50' : 'text-slate-500 dark:text-slate-400'}`}>
+                      {item.quantity === 0 ? '0' : item.quantity} x {formatCurrency(item.price)}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="font-bold text-slate-700 dark:text-slate-300">
-                      {formatCurrency(item.price * item.quantity)}
+                    <div className={`font-bold ${item.quantity === 0 ? 'line-through text-red-500/70 dark:text-red-400/70' : 'text-slate-700 dark:text-slate-300'}`}>
+                      {formatCurrency(item.quantity === 0 ? 0 : item.price * item.quantity)}
                     </div>
-                    {order.status !== 'cancelled' && order.status !== 'paid' && (
+                    {order.status !== 'cancelled' && (
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id || item.menuItemId, item.price, item.quantity, menuItem?.name || 'Taom', -1)}
+                          className="p-1.5 text-slate-600 hover:text-red-500 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-6 text-center font-bold text-sm dark:text-white">{item.quantity}</span>
+                        <button
+                          onClick={() => handleUpdateQuantity(item.id || item.menuItemId, item.price, item.quantity, menuItem?.name || 'Taom', 1)}
+                          className="p-1.5 text-slate-600 hover:text-green-500 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    {order.status !== 'cancelled' && (
                       <button
                         onClick={() => handleRemoveItem(item.id || item.menuItemId, item.price, item.quantity, menuItem?.name || 'Taom')}
                         className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors"
@@ -133,35 +166,7 @@ export const OrderDetailsModal = ({ order, onClose, onPrint }: OrderDetailsModal
         </div>
       </div>
 
-      {/* Custom Confirm Dialog */}
-      {confirm.open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setConfirm(c => ({ ...c, open: false }))} />
-          <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center gap-4 border border-slate-200 dark:border-slate-700">
-            <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-7 h-7 text-red-500" />
-            </div>
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white">{confirm.title}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">{confirm.message}</p>
-            </div>
-            <div className="flex gap-3 w-full mt-2">
-              <button
-                onClick={() => setConfirm(c => ({ ...c, open: false }))}
-                className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                Bekor qilish
-              </button>
-              <button
-                onClick={confirm.onConfirm}
-                className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-colors shadow-lg shadow-red-500/20"
-              >
-                Ha, tasdiqlash
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

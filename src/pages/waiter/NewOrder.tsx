@@ -13,14 +13,15 @@ export const NewOrder = () => {
   const storedUser = localStorage.getItem('currentUser');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
   const isCashier = currentUser?.role === 'cashier';
+  const adminUser = localStorage.getItem('adminUser');
   const actingWaiterId = localStorage.getItem('adminActingAsWaiter');
-  const activeWaiterId = currentUser?.role === 'admin' ? actingWaiterId : currentUser?.id;
+  const activeWaiterId = (adminUser && actingWaiterId) ? actingWaiterId : currentUser?.id;
 
   const [activeMainTab, setActiveMainTab] = useState<'taomlar' | 'modifikatorlar' | 'xizmatlar'>('taomlar');
   const [activeCategory, setActiveCategory] = useState('popular');
   const [selectedTable, setSelectedTable] = useState(tableParam || '');
   const [selectedWaiter, setSelectedWaiter] = useState('');
-  const [cart, setCart] = useState<{id: string, quantity: number, price: number}[]>([]);
+  const [cart, setCart] = useState<{id: string, quantity: number, price: number, weight?: number}[]>([]);
 
   // Check if this table has an active order
   const activeOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'paid' && o.status !== 'cancelled') : null;
@@ -50,38 +51,59 @@ export const NewOrder = () => {
     ? popularItems 
     : (activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems);
 
-  const addToCart = (item: any) => {
+  const addToCart = (item: any, amount: number = 1) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + amount } : i);
       }
-      return [...prev, { id: item.id, quantity: 1, price: item.price }];
+      return [...prev, { id: item.id, quantity: amount, price: item.price }];
     });
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = (id: string, amount: number = 1) => {
     setCart(prev => {
       const existing = prev.find(i => i.id === id);
-      if (existing && existing.quantity > 1) {
-        return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
+      if (existing && existing.quantity > amount) {
+        return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - amount } : i);
       }
       return prev.filter(i => i.id !== id);
     });
   };
 
-  const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalAmount = cart.reduce((sum, item) => {
+    const menuItem = menuItems.find(m => m.id === item.id);
+    const isBaliq = menuItem && categories.find(c => c.id === menuItem.categoryId)?.name?.toLowerCase().includes('baliq');
+    const effectivePrice = isBaliq && item.weight ? Math.round(item.price * item.weight) : item.price * item.quantity;
+    return sum + effectivePrice;
+  }, 0);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedTable) return alert('Xonani tanlang!');
     if (cart.length === 0) return alert('Buyurtma bo\'sh!');
 
-    const mappedItems = cart.map(i => ({
-      id: `oi${Date.now()}${i.id}`,
-      menuItemId: i.id,
-      quantity: i.quantity,
-      price: i.price
-    }));
+    const hasMissingStation = cart.some(item => {
+      const menuItem = menuItems.find(m => m.id === item.id);
+      return !menuItem?.kitchenStationId;
+    });
+
+    if (hasMissingStation) {
+      return alert("Bu taomga oshxona yo'nalishi belgilanmagan.");
+    }
+
+    const mappedItems = cart.map(i => {
+      const menuItem = menuItems.find(m => m.id === i.id);
+      const isBaliq = menuItem && categories.find(c => c.id === menuItem.categoryId)?.name?.toLowerCase().includes('baliq');
+      const effectivePrice = isBaliq && i.weight ? Math.round(i.price * i.weight) : i.price;
+      const label = isBaliq && i.weight ? `${menuItem?.name} (${i.weight} kg)` : undefined;
+      return {
+        id: `oi${Date.now()}${i.id}`,
+        menuItemId: i.id,
+        quantity: i.quantity,
+        price: effectivePrice,
+        note: label
+      };
+    });
 
     if (activeOrder) {
       addItemsToOrder(activeOrder.id, mappedItems, totalAmount);
@@ -95,13 +117,10 @@ export const NewOrder = () => {
       });
     }
     
-    // Print kitchen receipts
-    setTimeout(() => {
-      window.print();
-      // Go back after printing
-      navigate(-1);
-    }, 100);
+    // Kitchen printing is disabled per user request
+    navigate(-1);
   };
+
 
   const getTableNumber = (tId: string) => {
     if (tId === 'takeaway') return 'S-oboy';
@@ -112,34 +131,35 @@ export const NewOrder = () => {
   const groupedCart = cart.reduce((acc, item) => {
     const menuItem = menuItems.find(m => m.id === item.id);
     if (!menuItem) return acc;
-    const cat = categories.find(c => c.id === menuItem.categoryId);
-    const catName = cat ? cat.name : 'Boshqa';
-    if (!acc[catName]) acc[catName] = [];
-    acc[catName].push({ ...item, name: menuItem.name });
+    const stationId = menuItem.kitchenStationId;
+    const station = useStore.getState().kitchenStations.find(k => k.id === stationId);
+    const stationName = station ? station.name : 'Belgilanmagan';
+    if (!acc[stationName]) acc[stationName] = [];
+    acc[stationName].push({ ...item, name: menuItem.name });
     return acc;
   }, {} as Record<string, any[]>);
 
   return (
     <>
-    <div className="flex h-[calc(100vh-5rem)] bg-slate-50 dark:bg-slate-900 font-sans print:hidden">
+    <div className="flex h-[calc(100vh-4rem)] font-sans print:hidden" style={{ background: '#13120F' }}>
       <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <div className="p-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-4 mb-6">
-            <Link to="/waiter" className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+        <div className="p-5" style={{ background: '#1C1A17', borderBottom: '1px solid rgba(212,175,55,0.12)' }}>
+          <div className="flex items-center gap-4 mb-5">
+            <Link to="/waiter" className="p-2 rounded-xl transition-colors hover:bg-white/5" style={{ color: '#8A8070' }}>
               <ChevronLeft className="w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Yangi Buyurtma</h1>
-              <div className="flex bg-slate-100 dark:bg-slate-700/50 rounded-xl overflow-hidden p-1 gap-1 mt-2">
+              <h1 className="text-xl font-black tracking-tight uppercase" style={{ color: '#D4AF37', fontFamily: 'serif' }}>Yangi Buyurtma</h1>
+              <div className="flex rounded-xl overflow-hidden p-1 gap-1 mt-2" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 {(['taomlar', 'modifikatorlar', 'xizmatlar'] as const).map(tab => (
                   <button 
                     key={tab} 
                     onClick={() => setActiveMainTab(tab)}
-                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-                      activeMainTab === tab 
-                        ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                    }`}
+                    className="px-5 py-1.5 rounded-lg text-sm font-medium transition-all capitalize"
+                    style={activeMainTab === tab
+                      ? { background: '#D4AF37', color: '#13120F' }
+                      : { color: '#8A8070' }
+                    }
                   >
                     {tab}
                   </button>
@@ -147,14 +167,14 @@ export const NewOrder = () => {
               </div>
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             <button
               onClick={() => setActiveCategory('popular')}
-              className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
-                activeCategory === 'popular' 
-                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' 
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-              }`}
+              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5"
+              style={activeCategory === 'popular'
+                ? { background: '#D4AF37', color: '#13120F' }
+                : { background: 'rgba(255,255,255,0.05)', color: '#8A8070', border: '1px solid rgba(212,175,55,0.15)' }
+              }
             >
               🔥 Populyar
             </button>
@@ -162,11 +182,11 @@ export const NewOrder = () => {
               <button 
                 key={c.id}
                 onClick={() => setActiveCategory(c.id)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                  activeCategory === c.id 
-                    ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-md' 
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                }`}
+                className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all"
+                style={activeCategory === c.id
+                  ? { background: '#D4AF37', color: '#13120F' }
+                  : { background: 'rgba(255,255,255,0.05)', color: '#8A8070', border: '1px solid rgba(212,175,55,0.15)' }
+                }
               >
                 {c.name}
               </button>
@@ -174,32 +194,43 @@ export const NewOrder = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-5 scrollbar-hide" style={{ background: '#13120F' }}>
           {activeMainTab === 'taomlar' ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredItems.map(item => (
                 <div 
                   key={item.id} 
                   onClick={() => item.isAvailable && addToCart(item)}
-                  className={`bg-white dark:bg-slate-800 rounded-2xl border overflow-hidden shadow-sm flex flex-col cursor-pointer transition-all hover:shadow-md hover:border-blue-500 group ${
-                    !item.isAvailable ? 'opacity-50 grayscale cursor-not-allowed border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'
+                  className={`rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all group ${
+                    !item.isAvailable ? 'opacity-40 grayscale cursor-not-allowed' : ''
                   }`}
+                  style={{
+                    background: '#1C1A17',
+                    border: cart.find(c => c.id === item.id)
+                      ? '1.5px solid #D4AF37'
+                      : '1px solid rgba(212,175,55,0.12)'
+                  }}
                 >
                   <div className="p-4">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight line-clamp-1">{item.name}</h3>
-                    {isCashier && <p className="text-blue-600 dark:text-blue-400 font-bold mt-1">{formatCurrency(item.price)}</p>}
+                    <h3 className="font-bold text-sm leading-tight line-clamp-1" style={{ color: '#F5F2EA' }}>{item.name}</h3>
+                    {isCashier && <p className="font-bold mt-1 text-sm" style={{ color: '#D4AF37' }}>{formatCurrency(item.price)}</p>}
+                    {cart.find(c => c.id === item.id) && (
+                      <div className="mt-2 text-xs font-bold px-2 py-0.5 rounded-full w-fit" style={{ background: 'rgba(212,175,55,0.2)', color: '#D4AF37' }}>
+                        {cart.find(c => c.id === item.id)?.quantity} ta
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
               {filteredItems.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
+                <div className="col-span-full py-12 text-center" style={{ color: '#6C6659' }}>
                   Bu kategoriyada taomlar topilmadi
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-slate-400 space-y-3">
-              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center h-full space-y-3" style={{ color: '#6C6659' }}>
+              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
                 <ShoppingCart className="w-8 h-8 opacity-20" />
               </div>
               <p>Hozircha {activeMainTab} kiritilmagan</p>
@@ -208,30 +239,32 @@ export const NewOrder = () => {
         </div>
       </div>
 
-      <div className="w-[400px] bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col h-full shadow-2xl z-10">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <ShoppingCart className="w-5 h-5 text-blue-500 dark:text-blue-400" /> Joriy Buyurtma
+      <div className="w-[380px] flex flex-col h-full z-10" style={{ background: '#1C1A17', borderLeft: '1px solid rgba(212,175,55,0.12)' }}>
+        <div className="p-5" style={{ borderBottom: '1px solid rgba(212,175,55,0.1)' }}>
+          <h2 className="font-bold flex items-center gap-2 mb-4" style={{ color: '#D4AF37' }}>
+            <ShoppingCart className="w-4 h-4" /> Joriy Buyurtma
           </h2>
           <select 
             value={selectedTable} 
             onChange={(e) => setSelectedTable(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium appearance-none outline-none"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.2)', color: '#F5F2EA' }}
           >
             <option value="">Xonani tanlang (Yoki S-oboy)</option>
-            <option value="takeaway" className="font-bold text-blue-600">S-oboy (Olib ketish)</option>
+            <option value="takeaway">S-oboy (Olib ketish)</option>
             {tables.filter(t => t.status === 'available' || t.id === selectedTable).map(t => (
               <option key={t.id} value={t.id}>{formatTableName(t.number)} {t.status === 'occupied' ? '(Qo\'shimcha)' : ''}</option>
             ))}
           </select>
 
           {isCashier && !activeOrder && (
-            <div className="mt-4">
-              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Ofitsiantga biriktirish (ixtiyoriy)</label>
+            <div className="mt-3">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#6C6659' }}>Ofitsiantga biriktirish</label>
               <select 
                 value={selectedWaiter} 
                 onChange={(e) => setSelectedWaiter(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm font-medium appearance-none outline-none"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.2)', color: '#F5F2EA' }}
               >
                 <option value="">O'zim (Kassir)</option>
                 {useStore.getState().employees.filter(e => e.role === 'waiter' && e.isActive).map(w => (
@@ -241,24 +274,23 @@ export const NewOrder = () => {
             </div>
           )}
         </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50 dark:bg-slate-900/30">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide" style={{ background: 'rgba(0,0,0,0.2)' }}>
           
-          {/* Odingi narsalar (Existing items) */}
+          {/* Avvalgi narsalar */}
           {activeOrder && activeOrder.items.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 px-1 uppercase tracking-wider">Avvalgi buyurtmalar</h3>
-              <div className="space-y-3">
+            <div className="mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider mb-2 px-1" style={{ color: '#6C6659' }}>Avvalgi buyurtmalar</h3>
+              <div className="space-y-2">
                 {activeOrder.items.map(item => {
                   const menuItem = menuItems.find(m => m.id === item.menuItemId);
                   if (!menuItem) return null;
                   return (
-                    <div key={item.id} className="flex justify-between items-center bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 p-3 rounded-xl opacity-80">
-                      <div className="flex-1 pr-4">
-                        <h4 className="font-semibold text-slate-700 dark:text-slate-300 text-sm">{menuItem.name}</h4>
-                        {isCashier && <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{formatCurrency(item.price * item.quantity)}</p>}
+                    <div key={item.id} className="flex justify-between items-center p-3 rounded-xl opacity-70" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.08)' }}>
+                      <div className="flex-1 pr-3">
+                        <h4 className="font-semibold text-sm" style={{ color: '#A39B8B' }}>{menuItem.name}</h4>
+                        {isCashier && <p className="text-xs mt-0.5" style={{ color: '#6C6659' }}>{formatCurrency(item.price * item.quantity)}</p>}
                       </div>
-                      <div className="bg-white dark:bg-slate-700 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-600 font-bold text-sm text-slate-600 dark:text-slate-300">
+                      <div className="px-3 py-1 rounded-lg font-bold text-sm" style={{ background: 'rgba(255,255,255,0.06)', color: '#8A8070' }}>
                         {item.quantity} dona
                       </div>
                     </div>
@@ -268,53 +300,84 @@ export const NewOrder = () => {
             </div>
           )}
 
-          {/* Yangi qo'shilgan narsalar */}
           {(cart.length > 0 || activeOrder) && (
-            <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 px-1 uppercase tracking-wider">
-              {activeOrder ? 'Yangi qo\'shilmoqda' : 'Tanlanganlar'}
+            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 px-1" style={{ color: '#D4AF37' }}>
+              {activeOrder ? "Yangi qo'shilmoqda" : 'Tanlanganlar'}
             </h3>
           )}
 
           {cart.map(item => {
             const menuItem = menuItems.find(m => m.id === item.id);
             if (!menuItem) return null;
+            const isBaliq = categories.find(c => c.id === menuItem.categoryId)?.name?.toLowerCase().includes('baliq');
+            const effectiveTotal = isBaliq && item.weight ? Math.round(item.price * item.weight) : item.price * item.quantity;
             return (
-              <div key={item.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
-                <div className="flex-1 pr-4">
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{menuItem.name}</h4>
-                  {isCashier && <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 font-medium">{formatCurrency(item.price * item.quantity)}</p>}
+              <div key={item.id} className="flex flex-col gap-2 p-3.5 rounded-2xl" style={{ background: '#1C1A17', border: '1.5px solid rgba(212,175,55,0.2)' }}>
+                <div className="flex justify-between items-center">
+                  <div className="flex-1 pr-3">
+                    <h4 className="font-bold text-sm leading-tight" style={{ color: '#F5F2EA' }}>{menuItem.name}</h4>
+                    <p className="text-xs mt-1 font-medium" style={{ color: '#D4AF37' }}>{formatCurrency(effectiveTotal)}</p>
+                  </div>
+                  {!isBaliq && (
+                    <div className="flex items-center gap-2 rounded-xl px-1.5 py-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <button onClick={(e) => { e.stopPropagation(); removeFromCart(item.id, 1); }} className="p-1.5 rounded-lg transition-colors hover:bg-red-500/20" style={{ color: '#8A8070' }}>
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="font-bold text-sm w-5 text-center" style={{ color: '#F5F2EA' }}>{item.quantity}</span>
+                      <button onClick={(e) => { e.stopPropagation(); addToCart(menuItem, 0.5); }} className="px-1.5 text-xs font-bold rounded-lg transition-colors hover:bg-white/10" style={{ color: '#8A8070', border: '1px solid rgba(138, 128, 112, 0.5)' }}>+0.5</button>
+                      <button onClick={(e) => { e.stopPropagation(); addToCart(menuItem, 1); }} className="p-1.5 rounded-lg transition-colors" style={{ background: '#D4AF37', color: '#13120F' }}>
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {isBaliq && (
+                    <button onClick={() => setCart(prev => prev.filter(i => i.id !== item.id))} className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/20" style={{ color: '#8A8070' }}>
+                      <Minus className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-xl px-1.5 py-1.5 border border-slate-100 dark:border-slate-700/50">
-                  <button onClick={(e) => { e.stopPropagation(); removeFromCart(item.id); }} className="p-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg shadow-sm hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="font-bold text-sm w-4 text-center text-slate-800 dark:text-slate-200">{item.quantity}</span>
-                  <button onClick={(e) => { e.stopPropagation(); addToCart(menuItem); }} className="p-1.5 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-colors">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
+                {isBaliq && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: '#8A8070' }}>Vazn (kg):</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={item.weight || ''}
+                      onChange={(e) => {
+                        const w = parseFloat(e.target.value);
+                        setCart(prev => prev.map(i => i.id === item.id ? { ...i, weight: isNaN(w) ? undefined : w } : i));
+                      }}
+                      placeholder="1.0"
+                      className="w-24 px-2 py-1 rounded-lg text-sm font-bold outline-none"
+                      style={{ background: 'rgba(255,255,255,0.08)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)' }}
+                    />
+                    <span className="text-xs font-bold" style={{ color: '#D4AF37' }}>= {formatCurrency(item.weight ? Math.round(item.price * item.weight) : 0)}</span>
+                  </div>
+                )}
               </div>
             )
           })}
           {cart.length === 0 && (
-            <div className="text-center text-slate-400 dark:text-slate-500 mt-12 flex flex-col items-center">
-              <ShoppingCart className="w-12 h-12 mb-4 text-slate-200 dark:text-slate-700" />
+            <div className="text-center mt-12 flex flex-col items-center" style={{ color: '#6C6659' }}>
+              <ShoppingCart className="w-12 h-12 mb-4 opacity-20" />
               <p>Savatcha bo'sh</p>
             </div>
           )}
         </div>
 
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <div className="flex justify-between items-center mb-6">
-            <span className="font-bold text-slate-500 dark:text-slate-400">{isCashier ? 'Jami summa:' : 'Tanlangan taomlar:'}</span>
-            <span className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">{isCashier ? formatCurrency(totalAmount) : `${cart.reduce((a, b) => a + b.quantity, 0)} ta`}</span>
+        <div className="p-5" style={{ borderTop: '1px solid rgba(212,175,55,0.1)', background: '#1C1A17' }}>
+          <div className="flex justify-between items-center mb-4">
+            <span className="font-bold" style={{ color: '#8A8070' }}>{isCashier ? 'Jami summa:' : 'Tanlangan taomlar:'}</span>
+            <span className="text-2xl font-black" style={{ color: '#D4AF37' }}>{isCashier ? formatCurrency(totalAmount) : `${cart.reduce((a, b) => a + b.quantity, 0)} ta`}</span>
           </div>
           <button 
             onClick={handleSubmit}
             disabled={cart.length === 0 || !selectedTable}
-            className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
+            className="w-full font-bold py-3.5 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 uppercase tracking-widest text-sm"
+            style={{ background: '#D4AF37', color: '#13120F', boxShadow: '0 5px 20px rgba(212,175,55,0.2)' }}
           >
-            {activeOrder ? 'Qo\'shimcha Qilish' : 'Buyurtmani Yuborish'}
+            {activeOrder ? 'Qo\'shimcha Qilish' : 'Oshxonaga Yuborish'}
           </button>
         </div>
       </div>
@@ -322,23 +385,40 @@ export const NewOrder = () => {
 
     {/* KITCHEN RECEIPTS FOR PRINTING */}
     <div className="hidden print:block font-mono text-black">
-      {Object.entries(groupedCart).map(([catName, items]) => (
-        <div key={catName} className="p-4 w-[80mm] mx-auto" style={{ pageBreakAfter: 'always' }}>
-          <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
-          <div className="text-center mb-4 mt-2">
-            <p className="text-xl font-bold">Xona: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
-            <p className="text-sm">Ofitsiant: {currentUser?.role === 'admin' ? (employees.find((e: any) => e.id === activeWaiterId)?.fullName || 'Noma\'lum') : (currentUser?.name || 'Kassir')}</p>
-            <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
+      {Object.entries(groupedCart).map(([catName, items], index) => (
+        <div key={catName} className="w-[80mm] mx-auto">
+          <div className="p-4" style={{ pageBreakInside: 'avoid' }}>
+            <h2 className="text-center font-bold text-2xl mb-1 uppercase border-b-2 border-black pb-2">{catName}</h2>
+            <div className="text-center mb-4 mt-2">
+              <p className="text-xl font-bold">Xona: {selectedTable ? getTableNumber(selectedTable) : '-'}</p>
+              <p className="text-sm">Ofitsiant: {adminUser ? (employees.find((e: any) => e.id === activeWaiterId)?.fullName || 'Noma\'lum') : (currentUser?.fullName || 'Kassir')}</p>
+              <p className="text-xs mt-1">{new Date().toLocaleString('uz-UZ')}</p>
+            </div>
+            <div className="border-t-2 border-black border-dashed pt-4 mb-4">
+              {items.map((item: any, idx) => (
+                <div key={idx} className="flex justify-between items-start mb-3 font-bold text-lg">
+                  <span className="pr-4">{item.name}</span>
+                  <span className="whitespace-nowrap border-l-2 pl-2 border-black">{item.quantity} ta</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs mt-8">--- ISFAYRAM Oshxona ---</p>
           </div>
-          <div className="border-t-2 border-black border-dashed pt-4 mb-4">
-            {items.map((item: any, idx) => (
-              <div key={idx} className="flex justify-between items-start mb-3 font-bold text-lg">
-                <span className="pr-4">{item.name}</span>
-                <span className="whitespace-nowrap border-l-2 pl-2 border-black">{item.quantity} ta</span>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-xs mt-8">--- ISFAYRAM Oshxona ---</p>
+          
+          {/* Spacer and Cut line between different stations */}
+          {index < Object.entries(groupedCart).length - 1 && (
+            <div className="text-center w-full py-8">
+              <p className="mb-8">.</p>
+              <p className="border-b-2 border-dashed border-black"></p>
+              <p className="text-xs mt-2">--- YIRTISH UCHUN (Qaychi) ---</p>
+              <p className="mt-8">.</p>
+            </div>
+          )}
+          
+          {/* Final spacer to push out of printer for tearing */}
+          {index === Object.entries(groupedCart).length - 1 && (
+             <div className="h-16">.</div>
+          )}
         </div>
       ))}
     </div>

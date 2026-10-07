@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, User as UserIcon, Lock, ChevronLeft, Delete } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, ChevronLeft, Delete, ChefHat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import type { Employee } from '../types';
@@ -11,6 +11,7 @@ export const Login = () => {
   const [selectedUser, setSelectedUser] = useState<Employee | null>(null);
   const [pin, setPin] = useState('');
   const [adminClicks, setAdminClicks] = useState(0);
+  const [error, setError] = useState(false);
 
   const handleAdminClick = () => {
     const newClicks = adminClicks + 1;
@@ -21,19 +22,31 @@ export const Login = () => {
   };
 
   const activeWaiters = employees.filter(e => e.role === 'waiter' && e.isActive);
-  const activeCashiers = employees.filter(e => e.role === 'cashier' && e.isActive);
+
+  const activeKitchen = employees.filter(e => e.role === 'kitchen' && e.isActive);
+
+  const { computerDevices } = useStore();
+  const deviceId = localStorage.getItem('device_id');
+  const device = computerDevices?.find(d => d.computer_id === deviceId);
+  const isAssignedDevice = device && device.status === 'active' && device.assigned_role !== 'none';
+  const showReturnButton = isAssignedDevice && sessionStorage.getItem('explicitLogout') === 'true';
 
   const handlePinPress = (digit: string) => {
     if (pin.length < 4) {
       const newPin = pin + digit;
       setPin(newPin);
+      setError(false);
       if (newPin.length === 4) {
         if (selectedUser && newPin === selectedUser.pinCode) {
+          sessionStorage.removeItem('explicitLogout');
           localStorage.setItem('currentUser', JSON.stringify(selectedUser));
           navigate(`/${selectedUser.role}`);
         } else {
-          alert('Notog\'ri PIN kod!');
-          setPin('');
+          setError(true);
+          setTimeout(() => {
+            setPin('');
+            setError(false);
+          }, 600);
         }
       }
     }
@@ -41,53 +54,96 @@ export const Login = () => {
 
   const handleBackspace = () => {
     setPin(prev => prev.slice(0, -1));
+    setError(false);
   };
 
   if (selectedUser) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans">
-        <div className="max-w-sm w-full">
-          <button 
-            onClick={() => { setSelectedUser(null); setPin(''); }}
-            className="flex items-center gap-2 text-slate-400 hover:text-white mb-8 transition-colors"
+      <div className="min-h-screen flex items-center justify-center p-4 font-sans relative overflow-hidden" style={{ background: '#13120F' }}>
+        {/* Animated Background Logo */}
+        <motion.div
+          className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-5"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, -5, 5, 0]
+          }}
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity, 
+            ease: "easeInOut" 
+          }}
+        >
+          <img src="/logo.png" alt="" className="w-[800px] h-[800px] object-contain filter blur-[2px]" />
+        </motion.div>
+
+        <div className="max-w-sm w-full relative z-10">
+          <button
+            onClick={() => { setSelectedUser(null); setPin(''); setError(false); }}
+            className="flex items-center gap-2 mb-8 text-sm font-medium transition-colors hover:opacity-80"
+            style={{ color: '#8A8070' }}
           >
             <ChevronLeft className="w-5 h-5" /> Orqaga
           </button>
-          
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center text-white mb-4 shadow-lg">
-              {selectedUser.role === 'cashier' ? <ShoppingCart className="w-8 h-8 text-emerald-400" /> : <UserIcon className="w-8 h-8 text-blue-400" />}
+
+          <div className="flex flex-col items-center mb-10">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-xl"
+              style={{ background: 'rgba(212,175,55,0.15)', border: '2px solid rgba(212,175,55,0.3)' }}
+            >
+              {selectedUser.role === 'cashier'
+                ? <ShoppingCart className="w-8 h-8" style={{ color: '#D4AF37' }} />
+                : selectedUser.role === 'kitchen'
+                  ? <ChefHat className="w-8 h-8" style={{ color: '#D4AF37' }} />
+                  : <UserIcon className="w-8 h-8" style={{ color: '#D4AF37' }} />
+              }
             </div>
-            <h2 className="text-2xl font-bold text-white">{selectedUser.fullName}</h2>
-            <p className="text-slate-400 text-sm mt-1 capitalize">{selectedUser.role === 'cashier' ? 'Kassir' : 'Ofitsiant'}</p>
+            <h2 className="text-2xl font-bold" style={{ color: '#F5F2EA' }}>{selectedUser.fullName}</h2>
+            <p className="text-sm mt-1 capitalize" style={{ color: '#8A8070' }}>
+              {selectedUser.role === 'cashier' ? 'Kassir' : selectedUser.role === 'kitchen' ? 'Oshxona' : 'Ofitsiant'}
+            </p>
           </div>
 
-          <div className="flex justify-center gap-4 mb-8">
+          {/* PIN dots */}
+          <div className="flex justify-center gap-4 mb-10">
             {[0, 1, 2, 3].map(i => (
-              <div key={i} className={`w-4 h-4 rounded-full transition-all ${i < pin.length ? 'bg-blue-500 scale-110 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-700'}`} />
+              <motion.div
+                key={i}
+                animate={error ? { x: [0, -8, 8, -6, 6, 0] } : {}}
+                transition={{ duration: 0.4 }}
+                className="w-4 h-4 rounded-full transition-all duration-150"
+                style={{
+                  background: i < pin.length
+                    ? (error ? '#ef4444' : '#D4AF37')
+                    : 'rgba(255,255,255,0.1)',
+                  boxShadow: i < pin.length && !error ? '0 0 12px rgba(212,175,55,0.4)' : 'none'
+                }}
+              />
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          {/* Numpad */}
+          <div className="grid grid-cols-3 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button 
+              <button
                 key={num}
                 onClick={() => handlePinPress(num.toString())}
-                className="h-16 bg-slate-800 text-white text-2xl font-medium rounded-2xl hover:bg-slate-700 active:bg-slate-600 transition-colors shadow-sm"
+                className="h-16 rounded-2xl text-2xl font-medium transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#F5F2EA', border: '1px solid rgba(212,175,55,0.1)' }}
               >
                 {num}
               </button>
             ))}
             <div />
-            <button 
+            <button
               onClick={() => handlePinPress('0')}
-              className="h-16 bg-slate-800 text-white text-2xl font-medium rounded-2xl hover:bg-slate-700 active:bg-slate-600 transition-colors shadow-sm"
+              className="h-16 rounded-2xl text-2xl font-medium transition-all active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#F5F2EA', border: '1px solid rgba(212,175,55,0.1)' }}
             >
               0
             </button>
-            <button 
+            <button
               onClick={handleBackspace}
-              className="h-16 bg-slate-800 text-slate-400 flex items-center justify-center rounded-2xl hover:bg-slate-700 hover:text-white active:bg-slate-600 transition-colors shadow-sm"
+              className="h-16 rounded-2xl flex items-center justify-center transition-all active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#8A8070', border: '1px solid rgba(212,175,55,0.1)' }}
             >
               <Delete className="w-6 h-6" />
             </button>
@@ -98,89 +154,125 @@ export const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Background Logo */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-        <img src="/logo.png" alt="Background Logo" className="w-[80vw] h-[80vh] object-contain" />
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden" style={{ background: '#13120F' }}>
+      {showReturnButton && (
+        <div className="absolute top-6 right-6 z-50">
+          <button 
+            onClick={() => {
+              sessionStorage.removeItem('explicitLogout');
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95"
+            style={{ background: 'rgba(212,175,55,0.15)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)' }}
+          >
+            Qaytish ({device?.assigned_role === 'cashier' ? 'Kassir' : 'Ofitsiant'})
+          </button>
+        </div>
+      )}
 
-      <div className="flex flex-col items-center mb-10 relative z-10">
-        <div 
+      {/* Subtle noise texture */}
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none z-0"
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }}
+      />
+
+      {/* Animated Background Logo */}
+      <motion.div
+        className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-5"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          rotate: [0, 5, -5, 0]
+        }}
+        transition={{ 
+          duration: 20, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+      >
+        <img src="/logo.png" alt="" className="w-[800px] h-[800px] object-contain filter blur-[2px]" />
+      </motion.div>
+
+      {/* Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="flex flex-col items-center mb-12 relative z-10"
+      >
+        <div
           onClick={handleAdminClick}
-          className="mb-6 cursor-pointer select-none transition-all"
+          className="mb-5 cursor-pointer select-none"
         >
-          <motion.img 
-            src="/logo.png" 
-            alt="Isfayram Logo" 
-            className="h-36 object-contain drop-shadow-2xl rounded-3xl"
-            animate={{ y: [0, -15, 0] }}
+          <motion.img
+            src="/logo.png"
+            alt="Isfayram Logo"
+            className="h-28 object-contain rounded-3xl drop-shadow-2xl"
+            animate={{ y: [0, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           />
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight hidden">Isfayram</h1>
-        <p className="text-slate-500 mt-2 font-medium">Tizimga kirish uchun o'zingizni tanlang</p>
-      </div>
+        <h1 className="text-3xl font-black tracking-widest uppercase" style={{ color: '#D4AF37', fontFamily: 'serif' }}>ISFAYRAM</h1>
+        <p className="text-sm mt-2 tracking-[0.2em] uppercase" style={{ color: '#6C6659' }}>Tizimga kirish uchun o'zingizni tanlang</p>
+      </motion.div>
 
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-        {/* Waiters Section */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <UserIcon className="w-5 h-5 text-blue-500" /> Ofitsiantlar
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className={`max-w-4xl w-full grid grid-cols-1 ${activeKitchen.length > 0 ? 'md:grid-cols-[1fr_300px]' : ''} gap-6 relative z-10 px-4`}
+      >
+        {/* Waiters */}
+        <div className="p-6 rounded-3xl" style={{ background: '#1C1A17', border: '1px solid rgba(212,175,55,0.12)' }}>
+          <h2 className="text-base font-bold mb-4 flex items-center gap-2" style={{ color: '#D4AF37' }}>
+            <UserIcon className="w-4 h-4" /> Ofitsiantlar
           </h2>
           {activeWaiters.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-4">Hali ofitsiantlar qo'shilmagan.</p>
+            <p className="text-sm text-center py-4" style={{ color: '#6C6659' }}>Hali ofitsiantlar qo'shilmagan.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="flex flex-wrap gap-4">
               {activeWaiters.map(waiter => (
-                <button 
+                <button
                   key={waiter.id}
                   onClick={() => setSelectedUser(waiter)}
-                  className="flex flex-col items-center gap-3 p-4 rounded-2xl border border-slate-100 hover:border-blue-600 hover:bg-blue-50/50 transition-all group"
+                  className="flex flex-col items-center gap-3 p-5 rounded-2xl transition-all active:scale-95 hover:bg-white/5 w-full sm:w-[calc(50%-8px)] md:w-[calc(33.33%-11px)] lg:w-[calc(25%-12px)]"
+                  style={{ border: '1px solid rgba(212,175,55,0.12)' }}
                 >
-                  <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
                     <UserIcon className="w-6 h-6" />
                   </div>
-                  <span className="font-bold text-slate-700 text-sm text-center">{waiter.fullName}</span>
+                  <span className="font-bold text-sm text-center leading-tight" style={{ color: '#F5F2EA' }}>{waiter.fullName}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Cashier Section */}
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-emerald-500" /> Kassa
-          </h2>
-          {activeCashiers.length === 0 ? (
-            <p className="text-slate-400 text-sm text-center py-4">Hali kassirlar qo'shilmagan.</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {activeCashiers.map(cashier => (
-                <button 
-                  key={cashier.id}
-                  onClick={() => setSelectedUser(cashier)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all group"
-                >
-                  <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-bold text-slate-800 text-lg">{cashier.fullName}</h3>
-                    <p className="text-sm text-slate-500">Kassaga kirish uchun bosing</p>
-                  </div>
-                </button>
-              ))}
+        {/* Cashier + Kitchen */}
+        <div className="space-y-4">
+          {activeKitchen.length > 0 && (
+            <div className="p-5 rounded-3xl" style={{ background: '#1C1A17', border: '1px solid rgba(212,175,55,0.12)' }}>
+              <h2 className="text-base font-bold mb-3 flex items-center gap-2" style={{ color: '#D4AF37' }}>
+                <ChefHat className="w-4 h-4" /> Oshxona
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {activeKitchen.map(kitchen => (
+                  <button
+                    key={kitchen.id}
+                    onClick={() => setSelectedUser(kitchen)}
+                    className="flex items-center gap-2 p-3 rounded-2xl transition-all active:scale-95 hover:bg-white/5"
+                    style={{ border: '1px solid rgba(212,175,55,0.12)' }}
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
+                      <ChefHat className="w-4 h-4" />
+                    </div>
+                    <span className="font-bold text-xs truncate" style={{ color: '#F5F2EA' }}>{kitchen.fullName}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-12 h-10">
-        {/* Admin login button removed. Secretly click the main logo icon 3 times to access admin panel. */}
-      </div>
+      </motion.div>
     </div>
   );
 };

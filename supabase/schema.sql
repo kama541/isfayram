@@ -20,6 +20,12 @@ DROP TABLE IF EXISTS public.zones CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP TABLE IF EXISTS public.employees CASCADE;
 DROP TABLE IF EXISTS public.expenses CASCADE;
+DROP TABLE IF EXISTS public.recipe_ingredients CASCADE;
+DROP TABLE IF EXISTS public.general_settings CASCADE;
+DROP TABLE IF EXISTS public.computer_devices CASCADE;
+DROP TABLE IF EXISTS public.kitchen_stations CASCADE;
+DROP TABLE IF EXISTS public.notebook_entries CASCADE;
+DROP TABLE IF EXISTS public.settings CASCADE;
 
 -- 1. ROLES & PROFILES
 CREATE TABLE public.profiles (

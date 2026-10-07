@@ -5,7 +5,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import type { MenuItem } from '../../types';
 
 export const MenuManagement = () => {
-  const { menuItems, categories, deleteMenuItem, addMenuItem } = useStore();
+  const { menuItems, categories, kitchenStations, deleteMenuItem, addMenuItem, updateMenuItem } = useStore();
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItem, setNewItem] = useState<Partial<MenuItem>>({
@@ -14,41 +14,82 @@ export const MenuManagement = () => {
     price: 0,
     categoryId: categories[0]?.id || '',
     isAvailable: true,
+    kitchenStationId: '',
   });
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const storedUser = localStorage.getItem('currentUser');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
-  const isAdminOrCashier = currentUser?.role === 'admin' || currentUser?.role === 'cashier' || localStorage.getItem('adminUser');
+  const hasManagePermission = currentUser?.role === 'admin' || currentUser?.role === 'cashier';
 
   const filteredItems = activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems;
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAdminOrCashier) return; // Hard security guard
+    if (!hasManagePermission) return; // Hard security guard
     if (!newItem.name || !newItem.categoryId || !newItem.price) return;
     
-    await addMenuItem({
-      id: crypto.randomUUID(),
-      name: newItem.name,
-      description: newItem.description || '',
-      price: Number(newItem.price),
-      categoryId: newItem.categoryId,
-      isAvailable: newItem.isAvailable ?? true,
-      image: '',
-    });
+    if (editingItem) {
+      await updateMenuItem({
+        ...editingItem,
+        name: newItem.name!,
+        description: newItem.description || '',
+        price: Number(newItem.price),
+        categoryId: newItem.categoryId!,
+        isAvailable: newItem.isAvailable ?? true,
+        kitchenStationId: newItem.kitchenStationId
+      });
+    } else {
+      await addMenuItem({
+        id: crypto.randomUUID(),
+        name: newItem.name,
+        description: newItem.description || '',
+        price: Number(newItem.price),
+        categoryId: newItem.categoryId,
+        isAvailable: newItem.isAvailable ?? true,
+        image: '',
+        kitchenStationId: newItem.kitchenStationId
+      });
+    }
     
     setIsModalOpen(false);
+    setEditingItem(null);
     setNewItem({
       name: '',
       description: '',
       price: 0,
       categoryId: categories[0]?.id || '',
       isAvailable: true,
+      kitchenStationId: '',
     });
   };
 
-  const openModal = () => {
-    if (!isAdminOrCashier) return; // Prevent waiter from opening modal at all
+  const openModal = (item?: MenuItem) => {
+    if (!hasManagePermission) return; // Prevent non-admins from opening modal at all
+    if (item) {
+      setEditingItem(item);
+      setNewItem({
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        categoryId: item.categoryId,
+        isAvailable: item.isAvailable,
+        kitchenStationId: item.kitchenStationId || '',
+      });
+    } else {
+      setEditingItem(null);
+      setNewItem({
+        name: '',
+        description: '',
+        price: 0,
+        categoryId: categories[0]?.id || '',
+        isAvailable: true,
+        kitchenStationId: '',
+      });
+    }
     setIsModalOpen(true);
   };
 
@@ -59,9 +100,9 @@ export const MenuManagement = () => {
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Menyu Boshqaruvi</h1>
           <p className="text-slate-500 text-sm mt-1">Taomlar va toifalar ro'yxati</p>
         </div>
-        {isAdminOrCashier && (
+        {hasManagePermission && (
           <button 
-            onClick={openModal}
+            onClick={() => openModal()}
             className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm shadow-blue-600/20"
           >
             <Plus className="w-4 h-4" /> Yangi Taom
@@ -84,15 +125,37 @@ export const MenuManagement = () => {
           <button 
             key={c.id}
             onClick={() => setActiveCategory(c.id)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-2 ${
               activeCategory === c.id 
                 ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-md' 
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
             }`}
           >
             {c.name}
+            {hasManagePermission && (
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if(window.confirm(`Haqiqatan ham "${c.name}" kategoriyasini o'chirmoqchimisiz?`)) {
+                    useStore.getState().deleteCategory(c.id);
+                  }
+                }}
+                className="p-1 hover:bg-red-500/20 text-red-400 rounded-md transition-colors"
+                title="Kategoriyani o'chirish"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </span>
+            )}
           </button>
         ))}
+        {hasManagePermission && (
+          <button 
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 rounded-xl text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-all border border-dashed border-slate-300 dark:border-slate-600 shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Kategoriya qo'shish
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -108,13 +171,20 @@ export const MenuManagement = () => {
               <div className="flex justify-between items-start gap-2">
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.name}</h3>
               </div>
+              {item.kitchenStationId && (
+                <div className="mt-1">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                    {kitchenStations.find(k => k.id === item.kitchenStationId)?.name || 'Noma\'lum xona'}
+                  </span>
+                </div>
+              )}
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 flex-1">{item.description}</p>
               
               <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <span className="font-bold text-lg text-slate-800 dark:text-slate-200 tracking-tight">{isAdminOrCashier ? formatCurrency(item.price) : ''}</span>
-                {isAdminOrCashier && (
+                <span className="font-bold text-lg text-slate-800 dark:text-slate-200 tracking-tight">{formatCurrency(item.price)}</span>
+                {hasManagePermission && (
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
+                    <button onClick={() => openModal(item)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-colors">
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button onClick={() => deleteMenuItem(item.id)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
@@ -128,10 +198,10 @@ export const MenuManagement = () => {
         ))}
       </div>
 
-      {isModalOpen && isAdminOrCashier && (
+      {isModalOpen && hasManagePermission && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Yangi taom qo'shish</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{editingItem ? 'Taomni tahrirlash' : 'Yangi taom qo\'shish'}</h2>
             <form onSubmit={handleAddItem} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Taom nomi</label>
@@ -153,6 +223,20 @@ export const MenuManagement = () => {
                 >
                   {categories.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Qaysi xonaga yuboriladi?</label>
+                <select 
+                  value={newItem.kitchenStationId || ''} 
+                  onChange={e => setNewItem({...newItem, kitchenStationId: e.target.value})} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                  required
+                >
+                  <option value="" disabled>Tanlang...</option>
+                  {kitchenStations.filter(k => k.isActive).map(k => (
+                    <option key={k.id} value={k.id}>{k.name}</option>
                   ))}
                 </select>
               </div>
@@ -182,6 +266,42 @@ export const MenuManagement = () => {
                 </button>
                 <button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
                   Saqlash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isCategoryModalOpen && hasManagePermission && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Yangi kategoriya qo'shish</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (newCategoryName.trim()) {
+                useStore.getState().addCategory({ id: crypto.randomUUID(), name: newCategoryName.trim() });
+                setNewCategoryName('');
+                setIsCategoryModalOpen(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kategoriya nomi</label>
+                <input 
+                  type="text" 
+                  value={newCategoryName} 
+                  onChange={e => setNewCategoryName(e.target.value)} 
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
+                  required 
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                  Bekor qilish
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                  Qo'shish
                 </button>
               </div>
             </form>

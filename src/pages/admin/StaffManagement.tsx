@@ -1,23 +1,24 @@
-import { Search, Plus, X } from 'lucide-react';
+import { Search, Plus, X, Trash2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { useState } from 'react';
 
 export const StaffManagement = () => {
-  const { employees, addEmployee } = useStore();
+  const { employees, kitchenStations, addEmployee, deleteEmployee } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     fullName: '',
-    role: 'waiter' as 'waiter' | 'cashier',
+    role: 'waiter' as 'waiter' | 'cashier' | 'kitchen',
     pinCode: '',
-    isActive: true
+    isActive: true,
+    kitchenStationIds: [] as string[]
   });
 
   const handleAddEmployee = async () => {
     if (!newEmployee.fullName.trim() || !newEmployee.pinCode.trim()) return;
     await addEmployee(newEmployee);
     setIsModalOpen(false);
-    setNewEmployee({ fullName: '', role: 'waiter', pinCode: '', isActive: true });
+    setNewEmployee({ fullName: '', role: 'waiter', pinCode: '', isActive: true, kitchenStationIds: [] });
   };
 
   const filteredEmployees = employees.filter(emp => 
@@ -61,6 +62,7 @@ export const StaffManagement = () => {
                 <th className="py-4 px-6 font-medium text-slate-200">Ism</th>
                 <th className="py-4 px-6 font-medium text-slate-200">Kontaktlar</th>
                 <th className="py-4 px-6 font-medium text-slate-200">Restoranlar</th>
+                <th className="py-4 px-6 font-medium text-slate-200 text-right">Amallar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -83,6 +85,9 @@ export const StaffManagement = () => {
                       Isfayram Kafe
                     </span>
                   </td>
+                  <td className="py-4 px-6 text-right">
+                    {/* Admin cannot be deleted here */}
+                  </td>
                 </tr>
               )}
 
@@ -93,7 +98,12 @@ export const StaffManagement = () => {
                       <span className="text-white font-medium uppercase text-sm">{emp.fullName}</span>
                     </div>
                     <div className="text-sm text-slate-400 mt-0.5">
-                      {emp.role === 'cashier' ? 'Kassir' : emp.role === 'waiter' ? 'Ofitsiant' : emp.role}
+                      {emp.role === 'cashier' ? 'Kassir' : emp.role === 'waiter' ? 'Ofitsiant' : emp.role === 'kitchen' ? 'Oshxona xodimi' : emp.role}
+                      {emp.role === 'kitchen' && emp.kitchenStationIds && emp.kitchenStationIds.length > 0 && (
+                        <div className="mt-1 text-xs text-slate-500">
+                          Oshxonalar: {emp.kitchenStationIds.map(id => kitchenStations.find(k => k.id === id)?.name).filter(Boolean).join(', ')}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="py-4 px-6 text-slate-300">
@@ -106,12 +116,26 @@ export const StaffManagement = () => {
                       Isfayram Kafe
                     </span>
                   </td>
+                  <td className="py-4 px-6 text-right">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        (window as any).customConfirm(`Rostdan ham ${emp.fullName} ismli xodimni o'chirib tashlamoqchimisiz?`, () => {
+                          deleteEmployee(emp.id);
+                        });
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-colors"
+                      title="O'chirish"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               
               {!showAdminRow && filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-8 text-center text-slate-500">
+                  <td colSpan={4} className="py-8 text-center text-slate-500">
                     Xodimlar topilmadi
                   </td>
                 </tr>
@@ -152,8 +176,34 @@ export const StaffManagement = () => {
                 >
                   <option value="waiter">Ofitsiant</option>
                   <option value="cashier">Kassir</option>
+                  <option value="kitchen">Oshxona xodimi</option>
                 </select>
               </div>
+
+              {newEmployee.role === 'kitchen' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Qaysi oshxonalarga javobgar?</label>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {kitchenStations.filter(k => k.isActive).map(station => (
+                      <label key={station.id} className="flex items-center gap-2 text-slate-300">
+                        <input 
+                          type="checkbox"
+                          checked={newEmployee.kitchenStationIds.includes(station.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewEmployee({ ...newEmployee, kitchenStationIds: [...newEmployee.kitchenStationIds, station.id] });
+                            } else {
+                              setNewEmployee({ ...newEmployee, kitchenStationIds: newEmployee.kitchenStationIds.filter(id => id !== station.id) });
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-white/10 bg-[#1e2330] text-blue-500 focus:ring-0"
+                        />
+                        <span className="text-sm">{station.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">PIN kod (kirish uchun)</label>

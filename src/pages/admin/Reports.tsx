@@ -1,11 +1,11 @@
-import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList, Grid } from 'lucide-react';
+import { Search, ChevronDown, TrendingUp, ShoppingBag, Package, Wallet, Clock, Percent, BarChart3, X, ClipboardList, Grid, Plus } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency, formatDate, formatOrderId, formatTableName } from '../../utils/format';
 import { useState, useMemo } from 'react';
 import { useLocalStore } from '../../store/useLocalStore';
 import { OrderDetailsModal } from '../../components/OrderDetailsModal';
 
-type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'xonalar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital';
+type ReportSection = 'sotuvlar' | 'buyurtmalar' | 'otmenlar' | 'xonalar' | 'seyflar' | 'hisoblar' | 'bronlar' | 'qqs' | 'kapital' | 'ombor';
 type DishTab = 'taomlar' | 'modifikatorlar' | 'xizmatlar';
 
 const sectionIcons: Record<ReportSection, any> = {
@@ -18,6 +18,7 @@ const sectionIcons: Record<ReportSection, any> = {
   bronlar: Clock,
   qqs: Percent,
   kapital: ShoppingBag,
+  ombor: Package,
 };
 
 const sectionLabels: Record<ReportSection, string> = {
@@ -30,6 +31,7 @@ const sectionLabels: Record<ReportSection, string> = {
   bronlar: 'Bronlar',
   qqs: 'QQS',
   kapital: 'Kapital',
+  ombor: 'Ombor',
 };
 
 const StatCard = ({ label, value, icon, highlight }: { label: string; value: string; icon: React.ReactNode; highlight?: 'green' | 'red' | 'amber' }) => {
@@ -45,8 +47,8 @@ const StatCard = ({ label, value, icon, highlight }: { label: string; value: str
 };
 
 const DataTable = ({ headers, rows, emptyText, onRowClick }: { headers: string[]; rows: string[][]; emptyText: string; onRowClick?: (rowIndex: number) => void }) => (
-  <div className="bg-[#2a3143] rounded-2xl border border-white/5 overflow-hidden">
-    <table className="w-full text-left text-sm">
+  <div className="bg-[#2a3143] rounded-2xl border border-white/5 overflow-x-auto">
+    <table className="w-full text-left text-sm whitespace-nowrap">
       <thead>
         <tr className="border-b border-white/5">
           {headers.map(h => <th key={h} className="py-4 px-6 font-medium text-slate-400">{h}</th>)}
@@ -111,33 +113,93 @@ export const Reports = () => {
     const tushum = paid.reduce((s, o) => s + o.totalAmount, 0);
     const cashAmount = paid.filter(o => o.paymentMethod === 'cash').reduce((s, o) => s + o.totalAmount, 0);
     const cardAmount = paid.filter(o => o.paymentMethod === 'card').reduce((s, o) => s + o.totalAmount, 0);
-    const map = new Map<string, { id: string; name: string; category: string; quantity: number; revenue: number }>();
-    let totalUnits = 0;
-    paid.forEach(order => order.items.forEach(item => {
-      totalUnits += item.quantity;
-      const mi = menuItems.find(m => m.id === item.menuItemId);
-      const cat = categories.find(c => c.id === mi?.categoryId);
-      if (!mi) return;
-      if (selectedCategory && mi.categoryId !== selectedCategory) return;
-      if (!mi.name.toLowerCase().includes(searchTerm.toLowerCase()) && !(cat?.name || '').toLowerCase().includes(searchTerm.toLowerCase())) return;
-      if (map.has(item.menuItemId)) {
-        map.get(item.menuItemId)!.quantity += item.quantity;
-        map.get(item.menuItemId)!.revenue += item.price * item.quantity;
-      } else {
-        map.set(item.menuItemId, { id: item.menuItemId, name: mi.name, category: cat?.name || "Noma'lum", quantity: item.quantity, revenue: item.price * item.quantity });
-      }
-    }));
+    
+    // Comprehensive item tracking across ALL orders in this time period
+    const map = new Map<string, { id: string; name: string; category: string; ordered: number; cancelled: number; net: number; revenue: number }>();
+    let totalUnits = 0; // Total net units in paid orders (for the stat card)
+    
+    filteredOrders.forEach(order => {
+      const isOrderCancelled = order.status === 'cancelled';
+      const isPaid = order.status === 'paid';
+
+      order.items.forEach(item => {
+        const mi = menuItems.find(m => m.id === item.menuItemId);
+        if (!mi) return;
+        if (selectedCategory && mi.categoryId !== selectedCategory) return;
+        
+        const cat = categories.find(c => c.id === mi.categoryId);
+        const name = mi.name;
+        const searchStr = searchTerm.toLowerCase();
+        if (searchStr && !name.toLowerCase().includes(searchStr) && !(cat?.name || '').toLowerCase().includes(searchStr)) return;
+
+        let q = item.quantity;
+        let cQ = 0; // cancelled quantity
+
+        if (isOrderCancelled) {
+          cQ = q;
+          q = 0;
+        } else if (q === 0 && item.notes && item.notes.includes('OTMEN')) {
+          const match = item.notes.match(/OTMEN:\s*(\d+)/);
+          if (match) {
+            cQ = parseInt(match[1], 10);
+          }
+        }
+
+        const totalOrdered = q + cQ;
+        
+        if (isPaid) {
+          totalUnits += q;
+        }
+
+        if (!map.has(item.menuItemId)) {
+          map.set(item.menuItemId, { id: item.menuItemId, name, category: cat?.name || "Noma'lum", ordered: 0, cancelled: 0, net: 0, revenue: 0 });
+        }
+        
+        const row = map.get(item.menuItemId)!;
+        row.ordered += totalOrdered;
+        row.cancelled += cQ;
+        row.net += q;
+        
+        // Revenue is calculated only for paid items
+        if (isPaid) {
+          row.revenue += q * item.price;
+        }
+      });
+    });
+
     const items = activeDishTab === 'taomlar' 
-      ? Array.from(map.values()).sort((a, b) => b.quantity - a.quantity)
+      ? Array.from(map.values()).sort((a, b) => b.ordered - a.ordered)
       : [];
+      
     return { tushum, cashAmount, cardAmount, sotilganTaomlar: items.length, totalUnits, items, ordersCount: paid.length };
   }, [filteredOrders, menuItems, categories, searchTerm, selectedCategory, activeDishTab]);
 
-  // OTMENLAR
+  // OTMENLAR (to'liq bekor qilingan buyurtmalar + ichidan otmen qilingan taomlar)
   const otmenlarData = useMemo(() => {
-    const cancelled = filteredOrders.filter(o => o.status === 'cancelled');
-    return { cancelled, total: cancelled.reduce((s, o) => s + o.totalAmount, 0) };
-  }, [filteredOrders]);
+    const rows: { order: any; itemName: string; qty: number; amount: number; full: boolean }[] = [];
+    const orderIds = new Set<string>();
+    filteredOrders.forEach(o => {
+      const isFull = o.status === 'cancelled';
+      (o.items || []).forEach((item: any) => {
+        const notes: string = item.notes || '';
+        let qty = 0;
+        const match = notes.match(/OTMEN:\s*(\d+)/);
+        if (match) qty = parseInt(match[1], 10);
+        else if (isFull) qty = item.quantity;
+        if (qty <= 0) return;
+        const mi = menuItems.find(m => m.id === item.menuItemId);
+        rows.push({ order: o, itemName: mi?.name || 'Taom', qty, amount: qty * (item.price || 0), full: isFull });
+        orderIds.add(o.id);
+      });
+    });
+    rows.sort((a, b) => new Date(b.order.createdAt).getTime() - new Date(a.order.createdAt).getTime());
+    return {
+      rows,
+      ordersCount: orderIds.size,
+      itemsCount: rows.reduce((s, r) => s + r.qty, 0),
+      total: rows.reduce((s, r) => s + r.amount, 0),
+    };
+  }, [filteredOrders, menuItems]);
 
   // XONALAR
   const xonalarData = useMemo(() => {
@@ -181,6 +243,62 @@ export const Reports = () => {
     return { gross, expenses: exp, net: gross - exp };
   }, [orders, expenses]);
 
+  // OMBOR (FISH & MEAT)
+  const fishArrivedKey = `ombor_fish_arrived_${dateFrom}_${dateTo}`;
+  const meatArrivedKey = `ombor_meat_arrived_${dateFrom}_${dateTo}`;
+  
+  const [omborTick, setOmborTick] = useState(0);
+  const [omborInput, setOmborInput] = useState('');
+  const [omborType, setOmborType] = useState<'fish' | 'meat'>('fish');
+  
+  const omborData = useMemo(() => {
+    const paid = filteredOrders.filter(o => o.status === 'paid');
+    let fishSold = 0;
+    let meatSold = 0;
+    
+    paid.forEach(order => order.items.forEach(item => {
+      const mi = menuItems.find(m => m.id === item.menuItemId);
+      if (!mi) return;
+      const cat = categories.find(c => c.id === mi.categoryId);
+      
+      const n = mi.name.toLowerCase();
+      const cn = (cat?.name || '').toLowerCase();
+      
+      const isFish = cn.includes('baliq') || n.includes('baliq') || n.includes('amur') || n.includes('sazan') || n.includes('forel') || n.includes('sudak') || n.includes('osetrina');
+      const isMeat = cn.includes('kabob') || cn.includes('shashlik') || cn.includes('go\'sht') || cn.includes('gosht') || n.includes('kabob') || n.includes('shashlik') || n.includes('go\'sht') || n.includes('gosht') || n.includes('jiz') || n.includes('qiyma') || n.includes('jaz') || n.includes('bifsteks');
+        
+      if (isFish) fishSold += item.quantity;
+      if (isMeat) meatSold += item.quantity;
+    }));
+
+    const fishArrived = Number(localStorage.getItem(fishArrivedKey)) || 0;
+    const meatArrived = Number(localStorage.getItem(meatArrivedKey)) || 0;
+    
+    return {
+      fish: { arrived: fishArrived, sold: fishSold, remaining: fishArrived - fishSold },
+      meat: { arrived: meatArrived, sold: meatSold, remaining: meatArrived - meatSold }
+    };
+  }, [filteredOrders, menuItems, categories, fishArrivedKey, meatArrivedKey, omborTick]);
+
+  const handleSaveOmbor = () => {
+    const num = Number(omborInput);
+    if (!isNaN(num) && num > 0) {
+      const key = omborType === 'fish' ? fishArrivedKey : meatArrivedKey;
+      const arrived = Number(localStorage.getItem(key)) || 0;
+      localStorage.setItem(key, (arrived + num).toString());
+      setOmborInput('');
+      setOmborTick(t => t + 1);
+    }
+  };
+  
+  const handleResetOmbor = () => {
+    (window as any).customConfirm(`Rostdan ham ${omborType === 'fish' ? 'Baliq' : "Go'sht"} bo'yicha qabul qilingan ma'lumotlarni nollamoqchimisiz?`, () => {
+      const key = omborType === 'fish' ? fishArrivedKey : meatArrivedKey;
+      localStorage.setItem(key, '0');
+      setOmborTick(t => t + 1);
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#222838] font-sans text-slate-300">
 
@@ -214,7 +332,7 @@ export const Reports = () => {
         </div>
 
         {activeSection === 'sotuvlar' && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Waiter filter */}
             <div className="relative">
               <button onClick={() => { setShowWaiterFilter(v => !v); setShowCategoryFilter(false); }}
@@ -253,15 +371,15 @@ export const Reports = () => {
         )}
       </div>
 
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-52 bg-[#2a3143] border-r border-white/5 min-h-screen p-3 shrink-0">
-          <p className="text-xs text-slate-500 uppercase font-bold px-3 py-2 mb-1">Bo'limlar</p>
+        <div className="w-full md:w-52 bg-[#2a3143] border-b md:border-b-0 md:border-r border-white/5 md:min-h-screen p-2 md:p-3 shrink-0 flex md:block gap-1 overflow-x-auto scrollbar-hide">
+          <p className="hidden md:block text-xs text-slate-500 uppercase font-bold px-3 py-2 mb-1">Bo'limlar</p>
           {(Object.keys(sectionLabels) as ReportSection[]).map(sec => {
             const Icon = sectionIcons[sec];
             return (
               <button key={sec} onClick={() => setActiveSection(sec)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all mb-0.5 ${activeSection === sec ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3 py-2 md:py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all md:mb-0.5 ${activeSection === sec ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
                 <Icon className="w-4 h-4" />{sectionLabels[sec]}
               </button>
             );
@@ -269,7 +387,80 @@ export const Reports = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 min-w-0 p-3 md:p-6">
+
+          {activeSection === 'ombor' && (
+            <div className="space-y-6">
+              <div className="bg-[#2a3143] rounded-2xl p-6 border border-white/5 shadow-lg">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Package className="w-6 h-6 text-blue-400" /> 
+                  Ombor Hisoboti ({dateFrom.split('-').reverse().join('.')} - {dateTo.split('-').reverse().join('.')})
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* Fish Stats */}
+                  <div className="bg-[#32394a] p-5 rounded-2xl border border-white/5">
+                    <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-lg">🐟</span> 
+                      Baliq (kg/porsiya)
+                    </h3>
+                    <div className="space-y-3">
+                      <SummaryRow label="Qabul qilingan" value={`${omborData.fish.arrived.toFixed(1)}`} color="blue" />
+                      <SummaryRow label="Sotilgan" value={`${omborData.fish.sold.toFixed(1)}`} color="emerald" />
+                      <div className="border-t border-white/10 pt-3">
+                        <SummaryRow label="Qoldiq" value={`${omborData.fish.remaining.toFixed(1)}`} color={omborData.fish.remaining < 0 ? 'red' : 'amber'} bold />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Meat Stats */}
+                  <div className="bg-[#32394a] p-5 rounded-2xl border border-white/5">
+                    <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-lg">🥩</span> 
+                      Go'sht (kg/porsiya)
+                    </h3>
+                    <div className="space-y-3">
+                      <SummaryRow label="Qabul qilingan" value={`${omborData.meat.arrived.toFixed(1)}`} color="blue" />
+                      <SummaryRow label="Sotilgan" value={`${omborData.meat.sold.toFixed(1)}`} color="emerald" />
+                      <div className="border-t border-white/10 pt-3">
+                        <SummaryRow label="Qoldiq" value={`${omborData.meat.remaining.toFixed(1)}`} color={omborData.meat.remaining < 0 ? 'red' : 'amber'} bold />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-4 items-end bg-[#222838] p-5 rounded-2xl border border-white/5">
+                  <div className="min-w-[150px]">
+                    <label className="block text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider">Mahsulot Turi</label>
+                    <select 
+                      value={omborType} 
+                      onChange={e => setOmborType(e.target.value as 'fish' | 'meat')}
+                      className="w-full bg-[#3b4358] text-white px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer"
+                    >
+                      <option value="fish">🐟 Baliq</option>
+                      <option value="meat">🥩 Go'sht</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider">Yangi miqdor qo'shish ({omborType === 'fish' ? 'Baliq' : "Go'sht"})</label>
+                    <input 
+                      type="number" 
+                      value={omborInput} 
+                      onChange={e => setOmborInput(e.target.value)} 
+                      placeholder="Miqdor kiriting..."
+                      className="w-full bg-[#3b4358] text-white px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder-slate-500" 
+                    />
+                  </div>
+                  <button onClick={handleSaveOmbor} className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                    <Plus className="w-5 h-5" /> Qo'shish
+                  </button>
+                  <button onClick={handleResetOmbor} className="bg-[#4d2936] text-red-400 hover:bg-[#5e3242] px-6 py-3 rounded-xl font-medium transition-all">
+                    Nollash
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeSection === 'sotuvlar' && (
             <div className="space-y-6">
@@ -282,9 +473,16 @@ export const Reports = () => {
                 <StatCard label="Karta" value={formatCurrency(sotuvlarData.cardAmount)} icon={<Wallet className="w-5 h-5 text-sky-400" />} />
               </div>
               <DataTable
-                headers={['Taom', 'Kategoriya', 'Miqdori', 'Tushum']}
-                rows={sotuvlarData.items.map(i => [i.name, i.category, String(i.quantity), formatCurrency(i.revenue)])}
-                emptyText="Ushbu kunlarda to'langan buyurtma yo'q" />
+                headers={['Taom', 'Kategoriya', 'Jami urilgan', "Otmen bo'lgan", "Sotuvda qolgan", 'Tushum']}
+                rows={sotuvlarData.items.map(i => [
+                  i.name, 
+                  i.category, 
+                  String(i.ordered), 
+                  i.cancelled > 0 ? String(i.cancelled) : '-', 
+                  String(i.net), 
+                  formatCurrency(i.revenue)
+                ])}
+                emptyText="Ushbu kunlarda taomlar buyurtma qilinmagan" />
             </div>
           )}
 
@@ -312,19 +510,24 @@ export const Reports = () => {
           {activeSection === 'otmenlar' && (
             <div className="space-y-6">
               <div className="flex flex-wrap gap-4">
-                <StatCard label="Bekor qilinganlar" value={String(otmenlarData.cancelled.length)} icon={<X className="w-5 h-5 text-red-400" />} />
-                <StatCard label="Yo'qotilgan summa" value={formatCurrency(otmenlarData.total)} icon={<TrendingUp className="w-5 h-5 text-red-400" />} highlight="red" />
+                <StatCard label="Otmen bo'lgan buyurtmalar" value={String(otmenlarData.ordersCount)} icon={<X className="w-5 h-5 text-red-400" />} />
+                <StatCard label="Otmen taomlar soni" value={String(otmenlarData.itemsCount)} icon={<X className="w-5 h-5 text-red-400" />} />
+                <StatCard label="Otmen summasi" value={formatCurrency(otmenlarData.total)} icon={<TrendingUp className="w-5 h-5 text-red-400" />} highlight="red" />
               </div>
               <DataTable
-                headers={['№', 'Xona', 'Sana', 'Summa', 'Ofitsiant']}
-                rows={otmenlarData.cancelled.map(o => [
-                  `#${formatOrderId(o.id)}`, o.tableId || 'S-oboy',
-                  new Date(o.createdAt).toLocaleString('uz-UZ'),
-                  formatCurrency(o.totalAmount),
-                  employees.find(e => e.id === o.waiterId)?.fullName || 'Kassir'
+                headers={['№', 'Xona', 'Taom', 'Soni', 'Summa', 'Turi', 'Ofitsiant', 'Sana']}
+                rows={otmenlarData.rows.map(r => [
+                  `#${formatOrderId(r.order.id)}`,
+                  getTableNumber(r.order.tableId),
+                  r.itemName,
+                  String(r.qty),
+                  formatCurrency(r.amount),
+                  r.full ? "To'liq otmen" : 'Qisman otmen',
+                  employees.find(e => e.id === r.order.waiterId)?.fullName || 'Kassir',
+                  new Date(r.order.createdAt).toLocaleString('uz-UZ'),
                 ])}
-                onRowClick={(idx) => setSelectedOrder(otmenlarData.cancelled[idx])}
-                emptyText="Bekor qilingan buyurtma yo'q" />
+                onRowClick={(idx) => setSelectedOrder(otmenlarData.rows[idx].order)}
+                emptyText="Bu davrda otmen qilingan taom yo'q" />
             </div>
           )}
 

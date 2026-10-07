@@ -8,10 +8,15 @@ export const mockUsers: User[] = [
 ];
 
 export const mockCategories: Category[] = [
-  { id: 'c1', name: 'Milliy Taomlar', image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&q=80&w=400' },
-  { id: 'c2', name: 'Fast Food', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400' },
-  { id: 'c3', name: 'Ichimliklar', image: 'https://images.unsplash.com/photo-1437418747212-8d9709afab22?auto=format&fit=crop&q=80&w=400' },
-  { id: 'c4', name: 'Shirinliklar', image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c1', name: 'NON - CHOY', image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c2', name: 'BALIQ TAOMLARI', image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c3', name: 'SHIRINLIKLAR', image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c4', name: 'SALATLAR', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c5', name: 'KABOBLAR', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c6', name: 'OVQATLAR', image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c7', name: 'TABAKA', image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c8', name: 'TANDIR SOMSA', image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&q=80&w=400' },
+  { id: 'c9', name: 'SALQIN ICHIMLIKLAR', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&q=80&w=400' },
 ];
 
 export const mockMenuItems: MenuItem[] = [

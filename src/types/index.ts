@@ -1,9 +1,20 @@
-export type Role = 'admin' | 'cashier' | 'waiter';
+export type Role = 'admin' | 'cashier' | 'waiter' | 'kitchen';
 
 export interface User {
   id: string;
   name: string;
   role: Role;
+}
+
+export interface ComputerDevice {
+  id: string;
+  computer_id: string;
+  computer_name?: string;
+  assigned_role: 'admin' | 'cashier' | 'waiter' | 'kitchen' | 'none';
+  status: 'unregistered' | 'active' | 'inactive';
+  registered_at?: string;
+  registered_by?: string;
+  last_seen_at?: string;
 }
 
 export interface Category {
@@ -20,6 +31,14 @@ export interface MenuItem {
   price: number;
   image: string;
   isAvailable: boolean;
+  kitchenStationId?: string;
+}
+
+export interface KitchenStation {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
 }
 
 export interface Table {
@@ -35,6 +54,8 @@ export interface OrderItem {
   quantity: number;
   price: number; // price at the time of order
   notes?: string;
+  kitchenStationId?: string;
+  status?: 'pending' | 'accepted' | 'cooking' | 'ready' | 'delivered' | 'cancelled';
 }
 
 export interface Order {
@@ -49,6 +70,7 @@ export interface Order {
   cardAmount?: number;
   discountAmount?: number;
   customerPhone?: string;
+  printCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,9 +85,10 @@ export interface WaiterCall {
 export interface Employee {
   id: string;
   fullName: string;
-  role: 'waiter' | 'cashier';
+  role: 'waiter' | 'cashier' | 'kitchen';
   pinCode: string;
   isActive: boolean;
+  kitchenStationIds?: string[];
   createdAt?: string;
 }
 

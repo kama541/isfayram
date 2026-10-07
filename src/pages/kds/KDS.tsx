@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 export const KDS = ({ department: propDepartment }: { department?: string }) => {
   const params = useParams<{ department: string }>(); 
   const department = propDepartment || params.department; // 'kitchen' or 'shashlik'
-  const { orders, menuItems, categories, tables, employees } = useStore();
+  const { orders, menuItems, tables, employees } = useStore();
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
   // Trigger re-render to update elapsed time every minute
@@ -26,24 +26,24 @@ export const KDS = ({ department: propDepartment }: { department?: string }) => 
   // 1. Get preparing orders
   const preparingOrders = orders.filter(o => o.status === 'preparing');
 
-  // 2. Identify categories
-  const shashlikCategories = categories.filter(c => c.name.toLowerCase().includes('shashlik')).map(c => c.id);
-  const drinkCategories = categories.filter(c => c.name.toLowerCase().includes('ichimlik') || c.name.toLowerCase().includes('napitka')).map(c => c.id);
-
-  // 3. Filter order items based on department
+  // 2. Filter order items based on department
   const getRelevantItems = (items: any[]) => {
     return items.filter(item => {
       const menuItem = menuItems.find(m => m.id === item.menuItemId);
       if (!menuItem) return false;
       
-      const isShashlik = shashlikCategories.includes(menuItem.categoryId);
-      const isDrink = drinkCategories.includes(menuItem.categoryId);
-
-      if (isDrink) return false; // Drinks go to bar, not KDS
-
-      if (department === 'shashlik') return isShashlik;
-      if (department === 'kitchen') return !isShashlik;
+      if (department === 'all') return true;
       
+      const stationId = menuItem.kitchenStationId;
+      const station = useStore.getState().kitchenStations.find(k => k.id === stationId);
+      if (!station) return false;
+      
+      if (department === 'shashlik' && station.name.toLowerCase().includes('shashlik')) return true;
+      if (department === 'baliq' && station.name.toLowerCase().includes('baliq')) return true;
+      if (department === 'tandir' && station.name.toLowerCase().includes('tandir')) return true;
+      if (department === 'bar' && station.name.toLowerCase().includes('bar')) return true;
+      if (department === 'kitchen') return !station.name.toLowerCase().includes('bar'); // default to all non-bar for legacy kitchen
+
       return false;
     });
   };

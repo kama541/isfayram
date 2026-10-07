@@ -33,3 +33,11 @@ export const formatTableName = (name: string | number | undefined | null): strin
   }
   return str;
 };
+
+export const getDefaultTableSection = (tableName: string | undefined | null): string => {
+  if (!tableName) return 'Zal';
+  const name = String(tableName).toLowerCase();
+  if (name.includes('tapcha') || ['4-stol', '6-stol', '8-stol', '9-stol'].includes(name)) return "Ko'cha";
+  if (name.includes('kabinet')) return "Kabina";
+  return 'Zal';
+};
