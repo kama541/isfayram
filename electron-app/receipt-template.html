@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      font-weight: bold;
+      color: #000;
+      background: #fff;
+      width: 76mm;
+      padding: 5px;
+      margin: 0 auto;
+    }
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .logo-wrap img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      filter: grayscale(100%) contrast(200%) brightness(1.1);
+    }
+    .restaurant-name {
+      text-align: center;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .restaurant-sub {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .divider-solid { border-top: 2px solid #000; margin: 5px 0; }
+    .divider-dash  { border-top: 1px dashed #000; margin: 5px 0; }
+    .info { text-align: center; margin-bottom: 4px; line-height: 1.6; }
+    .info .table-num { font-size: 26px; font-weight: 900; margin: 4px 0; }
+    .info .label     { font-size: 14px; font-weight: normal; }
+    .info .waiter    { font-size: 16px; margin-bottom: 4px; }
+    .info .time      { font-size: 14px; font-weight: normal; }
+    .items { margin: 10px 0; }
+    .item { text-align: center; margin-bottom: 12px; }
+    .item .name { display: block; font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; }
+    .item .qty  { display: block; font-size: 24px; font-weight: 900; }
+    .footer       { text-align: center; font-size: 12px; font-weight: bold; margin-top: 10px; letter-spacing: 1px; }
+    .footer-thanks { text-align: center; font-size: 14px; margin-top: 4px; font-weight: 900; }
+    @media print { html, body { width: 76mm; } }
+  </style>
+</head>
+<body>
+  <div class="logo-wrap">
+    <img id="logo-img" src="" alt="Logo" style="display:none;" />
+  </div>
+  <div class="restaurant-name">ISFAYRAM</div>
+  <div class="restaurant-sub">OSHXONA | RESTAURANT</div>
+  <div class="divider-solid"></div>
+  <div class="info">
+    <span class="label">XONA / STOL</span>
+    <p class="table-num"><span id="table-number"></span></p>
+    <p class="waiter">Ofitsiant: <span id="waiter-name"></span></p>
+    <p class="time" id="time"></p>
+  </div>
+  <div class="divider-dash"></div>
+  <div style="text-align:center; font-size:10px; margin-bottom:4px; letter-spacing:1px;">── BUYURTMA ──</div>
+  <div class="items" id="items-list"></div>
+  <div class="divider-solid"></div>
+  <div class="info" style="margin-top:4px;">
+    <p style="font-size:11px;">Oshxona: <b id="station-name"></b></p>
+  </div>
+  <div class="divider-dash"></div>
+  <div class="footer">★ TEZROQ TAYYORLAB BERING ★</div>
+  <div class="footer-thanks">RAHMAT!</div>
+
+  <script>
+    const data = window.__RECEIPT_DATA__;
+    if (data) {
+      if (data.logoBase64) {
+        const img = document.getElementById('logo-img');
+        img.src = data.logoBase64;
+        img.style.display = 'block';
+      }
+      document.getElementById('station-name').textContent = data.stationName || '';
+      document.getElementById('table-number').textContent = data.tableNumber || '';
+      document.getElementById('waiter-name').textContent  = data.waiterName  || "Noma'lum";
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('time').textContent =
+        pad(now.getDate()) + '.' + pad(now.getMonth()+1) + '.' + now.getFullYear() + '  ' +
+        pad(now.getHours()) + ':' + pad(now.getMinutes());
+      const list = document.getElementById('items-list');
+      (data.items || []).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = '<span class="name">' + item.name + '</span><span class="qty">' + item.quantity + ' ta</span>';
+        list.appendChild(div);
+      });
+    }
+    window.onload = () => setTimeout(() => window.print(), 300);
+  </script>
+</body>
+</html>
