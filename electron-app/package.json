@@ -1,6 +1,6 @@
 {
   "name": "isfayram-pos-desktop",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "description": "Isfayram Restaurant POS - Desktop App (Electron)",
   "main": "main.js",
   "scripts": {
