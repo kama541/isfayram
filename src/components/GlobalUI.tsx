@@ -80,12 +80,6 @@ export const GlobalUI = () => {
         </div>
       )}
 
-      {/* Demo Banner */}
-      {import.meta.env.VITE_IS_DEMO_MODE === 'true' && (
-        <div className="fixed top-0 left-0 right-0 z-[10000] bg-red-600/90 backdrop-blur-sm text-white text-[11px] uppercase font-bold text-center py-1 tracking-[0.2em] shadow-md pointer-events-none">
-          DEMO VERSION - Real tizim emas
-        </div>
-      )}
     </>
   );
 };

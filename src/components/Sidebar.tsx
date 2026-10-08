@@ -45,6 +45,7 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
   const navigate = useNavigate();
   const { employees } = useStore();
   const waiters = employees.filter(e => e.role === 'waiter');
+  const [showWaiterModal, setShowWaiterModal] = useState(false);
   const currentUserStr = localStorage.getItem('currentUser');
   const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
   const hasAdminAuth = !!localStorage.getItem('adminUser') || currentUser?.role === 'admin';
