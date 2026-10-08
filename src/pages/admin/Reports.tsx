@@ -103,7 +103,7 @@ export const Reports = () => {
   const waiters = employees.filter(e => e.role === 'waiter');
 
   const filteredOrders = useMemo(() => orders.filter(o => {
-    const d = o.createdAt.split('T')[0];
+    const d = (o.createdAt || '').split('T')[0];
     return d >= dateFrom && d <= dateTo && (selectedWaiter ? o.waiterId === selectedWaiter : true);
   }), [orders, dateFrom, dateTo, selectedWaiter]);
 

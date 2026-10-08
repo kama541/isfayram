@@ -40,9 +40,33 @@ CREATE TABLE public.profiles (
 CREATE TABLE public.employees (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('cashier', 'waiter')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'cashier', 'waiter', 'kitchen')),
     pin_code TEXT NOT NULL UNIQUE,
     is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 1.5.1 KITCHEN STATIONS
+CREATE TABLE public.kitchen_stations (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 1.5.2 COMPUTER DEVICES (Device Management)
+CREATE TABLE public.computer_devices (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    computer_id TEXT NOT NULL UNIQUE,
+    computer_name TEXT,
+    assigned_role TEXT CHECK (assigned_role IN ('admin', 'cashier', 'waiter', 'kitchen', 'none')),
+    status TEXT NOT NULL DEFAULT 'unregistered' CHECK (status IN ('unregistered', 'active', 'inactive')),
+    registered_at TIMESTAMPTZ,
+    registered_by UUID REFERENCES public.profiles(id),
+    last_seen_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -238,11 +262,15 @@ CREATE POLICY "Staff can do everything" ON public.inventory_items FOR ALL USING 
 CREATE POLICY "Staff can do everything" ON public.inventory_transactions FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Staff can do everything" ON public.waiter_calls FOR ALL USING (auth.role() = 'authenticated');
 
--- Temporary permissive policies for local testing without auth
+-- Permissive policies for POS operation
 CREATE POLICY "Allow all on employees" ON public.employees FOR ALL USING (true);
 CREATE POLICY "Allow all on expenses" ON public.expenses FOR ALL USING (true);
+CREATE POLICY "Allow all on kitchen_stations" ON public.kitchen_stations FOR ALL USING (true);
+CREATE POLICY "Allow all on computer_devices" ON public.computer_devices FOR ALL USING (true);
 ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kitchen_stations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.computer_devices ENABLE ROW LEVEL SECURITY;
 -- 9. NOTEBOOK (DAFTARCHA)
 CREATE TABLE public.notebook_entries (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,

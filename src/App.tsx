@@ -156,6 +156,9 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
   const [adminLogin, setAdminLogin] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
+  const location = useLocation();
+
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   useEffect(() => {
     let id = localStorage.getItem('device_id');
@@ -193,6 +196,7 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
 
   // Auto-login logic
   useEffect(() => {
+    if (isAdminRoute) return;
     if (device && device.status === 'active' && device.assigned_role !== 'none') {
       if (sessionStorage.getItem('explicitLogout') === 'true') {
         return; // Skip auto-login if user explicitly logged out
@@ -212,7 +216,7 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
     } else if (device && device.status !== 'active') {
       localStorage.removeItem('currentUser');
     }
-  }, [device]);
+  }, [device, isAdminRoute]);
 
   if (adminSetupMode && deviceId) {
     return (
@@ -321,12 +325,22 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
     );
   }
 
-  if (isLoading || !deviceId || device === undefined) {
+  // Never block admin routes with device check
+  if (isAdminRoute) {
+    return <>{children}</>;
+  }
+
+  if (isLoading) {
     return (
       <div className="fixed inset-0 z-50 bg-[#13120F] flex flex-col items-center justify-center font-sans">
         <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  // If devices table is not used/loaded, fallback to allowing normal access
+  if (!deviceId || device === undefined) {
+    return <>{children}</>;
   }
 
   if (device.status === 'unregistered') {
@@ -341,6 +355,14 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
           <div className="mt-4 inline-block bg-amber-500/20 text-amber-500 px-4 py-2 rounded-full font-bold">
             Holat: Ro'yxatdan o'tmagan
           </div>
+        </div>
+        <div className="mt-8">
+          <a
+            href="/admin/login"
+            className="inline-flex items-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95"
+          >
+            Admin sifatida kirish
+          </a>
         </div>
       </div>
     );
@@ -358,6 +380,14 @@ const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) 
           <div className="mt-4 inline-block bg-red-500/20 text-red-500 px-4 py-2 rounded-full font-bold">
             Holat: Faolsiz
           </div>
+        </div>
+        <div className="mt-8">
+          <a
+            href="/admin/login"
+            className="inline-flex items-center gap-2 px-6 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95"
+          >
+            Admin sifatida kirish
+          </a>
         </div>
       </div>
     );

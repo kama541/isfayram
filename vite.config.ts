@@ -35,4 +35,9 @@ export default defineConfig({
       }
     })
   ],
+  server: {
+    watch: {
+      ignored: ['**/electron-app/**', '**/dist/**']
+    }
+  }
 })

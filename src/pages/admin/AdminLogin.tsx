@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ArrowRight, UtensilsCrossed } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { useStore } from '../../store/useStore';
 
 export const AdminLogin = () => {
   const navigate = useNavigate();
@@ -14,12 +16,47 @@ export const AdminLogin = () => {
     setError('');
 
     try {
-      if (password === '111111') {
-        localStorage.setItem('adminUser', JSON.stringify({ role: 'admin', email: 'admin' }));
+      const cleanPass = password.trim();
+      const employees = useStore.getState().employees || [];
+      const adminEmployee = employees.find(emp => 
+        ((emp.role as string) === 'admin' || emp.fullName.toLowerCase().includes('admin')) && 
+        emp.pinCode === cleanPass
+      );
+
+      // 1. Master passwords and Admin employee PIN codes
+      if (
+        cleanPass === '111111' || 
+        cleanPass === 'admin' || 
+        cleanPass === '+998916769198' || 
+        cleanPass === '916769198' || 
+        adminEmployee
+      ) {
+        const adminData = { role: 'admin', email: adminEmployee ? adminEmployee.fullName : 'admin' };
+        localStorage.setItem('adminUser', JSON.stringify(adminData));
+        localStorage.setItem('currentUser', JSON.stringify({ role: 'admin', fullName: adminEmployee ? adminEmployee.fullName : 'Administrator' }));
         navigate('/admin');
-      } else {
-        setError('Parol noto\'g\'ri');
+        return;
       }
+
+      // 2. Supabase Auth fallback (email or login-based)
+      try {
+        const email = cleanPass.includes('@') ? cleanPass : `${cleanPass.toLowerCase().replace(/[^a-z0-9]/g, '') || 'admin'}@isfayram.com`;
+        const { data: authData } = await supabase.auth.signInWithPassword({
+          email,
+          password: cleanPass
+        });
+        if (authData?.user) {
+          const adminData = { role: 'admin', email: authData.user.email, id: authData.user.id };
+          localStorage.setItem('adminUser', JSON.stringify(adminData));
+          localStorage.setItem('currentUser', JSON.stringify({ role: 'admin', fullName: 'Administrator' }));
+          navigate('/admin');
+          return;
+        }
+      } catch {
+        // Fallback to error message below
+      }
+
+      setError('Parol noto\'g\'ri');
     } catch (err: any) {
       setError(err.message || 'Xatolik yuz berdi');
     } finally {

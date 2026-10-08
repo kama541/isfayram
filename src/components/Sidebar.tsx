@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, Users, UserSquare2, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings, UserIcon, X, Monitor } from 'lucide-react';
+import { Building2, Users, UserSquare2, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings, UserIcon, X, Monitor, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { Role } from '../types';
@@ -45,8 +45,13 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
   const navigate = useNavigate();
   const { employees } = useStore();
   const waiters = employees.filter(e => e.role === 'waiter');
-  const [showWaiterModal, setShowWaiterModal] = useState(false);
-  const links = role === 'admin' ? adminLinks : role === 'cashier' ? cashierLinks : waiterLinks;
+  const currentUserStr = localStorage.getItem('currentUser');
+  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+  const hasAdminAuth = !!localStorage.getItem('adminUser') || currentUser?.role === 'admin';
+  const baseLinks = role === 'admin' ? adminLinks : role === 'cashier' ? cashierLinks : waiterLinks;
+  const links = (hasAdminAuth && role !== 'admin')
+    ? [{ name: 'Admin Panel', path: '/admin', icon: ShieldCheck }, ...baseLinks]
+    : baseLinks;
 
   const handleWaiterSelect = (waiterId: string) => {
     localStorage.setItem('adminActingAsWaiter', waiterId);
@@ -55,9 +60,6 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
   };
 
   const roleLabel = role === 'admin' ? 'Administrator' : role === 'cashier' ? 'Kassir' : 'Ofitsiant';
-  
-  const currentUserStr = localStorage.getItem('currentUser');
-  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
   
   let userName = role === 'admin' ? 'Administrator' : (currentUser?.fullName || roleLabel);
   

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, User as UserIcon, ChevronLeft, Delete, ChefHat } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, ChevronLeft, Delete, ChefHat, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import type { Employee } from '../types';
@@ -155,20 +155,30 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden" style={{ background: '#13120F' }}>
-      {showReturnButton && (
-        <div className="absolute top-6 right-6 z-50">
+      {/* Top action buttons */}
+      <div className="absolute top-6 left-6 right-6 z-50 flex justify-between items-center pointer-events-none">
+        <button
+          onClick={() => navigate('/admin/login')}
+          className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/10 active:scale-95 shadow-lg backdrop-blur-sm cursor-pointer"
+          style={{ background: 'rgba(212,175,55,0.12)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.25)' }}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Admin Panel</span>
+        </button>
+
+        {showReturnButton ? (
           <button 
             onClick={() => {
               sessionStorage.removeItem('explicitLogout');
               window.location.reload();
             }}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95"
+            className="pointer-events-auto px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 cursor-pointer"
             style={{ background: 'rgba(212,175,55,0.15)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)' }}
           >
             Qaytish ({device?.assigned_role === 'cashier' ? 'Kassir' : 'Ofitsiant'})
           </button>
-        </div>
-      )}
+        ) : <div />}
+      </div>
 
       {/* Subtle noise texture */}
       <div className="absolute inset-0 opacity-[0.015] pointer-events-none z-0"
