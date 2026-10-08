@@ -1,34 +1,13 @@
--- ==========================================
--- RESTAURANT POS FULL DATABASE SCHEMA
--- ==========================================
+-- ==============================================================================
+-- ISFAYRAM RESTAURANT - REAL PRODUCTION DATABASE SCHEMA
+-- XAVFSIZ REJIM: Mavjud ma'lumotlar va jadvallarni O'CHIRMAYDI (DROP TABLE YO'Q)!
+-- ==============================================================================
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Drop existing tables to avoid "relation already exists" errors
-DROP TABLE IF EXISTS public.waiter_calls CASCADE;
-DROP TABLE IF EXISTS public.inventory_transactions CASCADE;
-DROP TABLE IF EXISTS public.inventory_items CASCADE;
-DROP TABLE IF EXISTS public.reservations CASCADE;
-DROP TABLE IF EXISTS public.payments CASCADE;
-DROP TABLE IF EXISTS public.order_items CASCADE;
-DROP TABLE IF EXISTS public.orders CASCADE;
-DROP TABLE IF EXISTS public.menu_items CASCADE;
-DROP TABLE IF EXISTS public.menu_categories CASCADE;
-DROP TABLE IF EXISTS public.tables CASCADE;
-DROP TABLE IF EXISTS public.zones CASCADE;
-DROP TABLE IF EXISTS public.profiles CASCADE;
-DROP TABLE IF EXISTS public.employees CASCADE;
-DROP TABLE IF EXISTS public.expenses CASCADE;
-DROP TABLE IF EXISTS public.recipe_ingredients CASCADE;
-DROP TABLE IF EXISTS public.general_settings CASCADE;
-DROP TABLE IF EXISTS public.computer_devices CASCADE;
-DROP TABLE IF EXISTS public.kitchen_stations CASCADE;
-DROP TABLE IF EXISTS public.notebook_entries CASCADE;
-DROP TABLE IF EXISTS public.settings CASCADE;
-
 -- 1. ROLES & PROFILES
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     role TEXT NOT NULL CHECK (role IN ('admin', 'cashier', 'waiter', 'kitchen')),
     full_name TEXT NOT NULL,
@@ -48,7 +27,7 @@ CREATE TABLE public.employees (
 );
 
 -- 1.5.1 KITCHEN STATIONS
-CREATE TABLE public.kitchen_stations (
+CREATE TABLE IF NOT EXISTS public.kitchen_stations (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
@@ -58,7 +37,7 @@ CREATE TABLE public.kitchen_stations (
 );
 
 -- 1.5.2 COMPUTER DEVICES (Device Management)
-CREATE TABLE public.computer_devices (
+CREATE TABLE IF NOT EXISTS public.computer_devices (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     computer_id TEXT NOT NULL UNIQUE,
     computer_name TEXT,
@@ -72,7 +51,7 @@ CREATE TABLE public.computer_devices (
 );
 
 -- 1.6. EXPENSES (Finance and Utility Management)
-CREATE TABLE public.expenses (
+CREATE TABLE IF NOT EXISTS public.expenses (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     category TEXT NOT NULL CHECK (category IN ('Elektr energiyasi', 'Gaz', 'Suv', 'Internet', 'Ijara', 'Ishchilar maoshi', 'Ta''mirlash xarajatlari', 'Boshqa')),
     amount DECIMAL(10,2) NOT NULL,
@@ -84,7 +63,7 @@ CREATE TABLE public.expenses (
 );
 
 -- 2. ZONES & TABLES
-CREATE TABLE public.zones (
+CREATE TABLE IF NOT EXISTS public.zones (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL, -- e.g., 'Ko''cha', 'Kabinkalar', 'Ichki zal'
     description TEXT,
@@ -92,7 +71,7 @@ CREATE TABLE public.zones (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.tables (
+CREATE TABLE IF NOT EXISTS public.tables (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     zone_id UUID REFERENCES public.zones(id) ON DELETE CASCADE,
     table_number TEXT NOT NULL,
@@ -105,14 +84,14 @@ CREATE TABLE public.tables (
 );
 
 -- 3. MENU
-CREATE TABLE public.menu_categories (
+CREATE TABLE IF NOT EXISTS public.menu_categories (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL,
     sort_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE
 );
 
-CREATE TABLE public.menu_items (
+CREATE TABLE IF NOT EXISTS public.menu_items (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     category_id UUID REFERENCES public.menu_categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -126,7 +105,7 @@ CREATE TABLE public.menu_items (
 );
 
 -- 4. ORDERS & ORDER ITEMS
-CREATE TABLE public.orders (
+CREATE TABLE IF NOT EXISTS public.orders (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     table_id UUID REFERENCES public.tables(id) ON DELETE SET NULL,
     waiter_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL, -- Null if ordered via QR
@@ -138,7 +117,7 @@ CREATE TABLE public.orders (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.order_items (
+CREATE TABLE IF NOT EXISTS public.order_items (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
     menu_item_id UUID REFERENCES public.menu_items(id) ON DELETE RESTRICT,
@@ -151,7 +130,7 @@ CREATE TABLE public.order_items (
 );
 
 -- 5. PAYMENTS
-CREATE TABLE public.payments (
+CREATE TABLE IF NOT EXISTS public.payments (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
     cashier_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -161,7 +140,7 @@ CREATE TABLE public.payments (
 );
 
 -- 6. RESERVATIONS (BRON)
-CREATE TABLE public.reservations (
+CREATE TABLE IF NOT EXISTS public.reservations (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     customer_name TEXT NOT NULL,
     phone_number TEXT NOT NULL,
@@ -177,7 +156,7 @@ CREATE TABLE public.reservations (
 );
 
 -- 7. INVENTORY (OMBOR)
-CREATE TABLE public.inventory_items (
+CREATE TABLE IF NOT EXISTS public.inventory_items (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     name TEXT NOT NULL,
     unit TEXT NOT NULL, -- e.g., kg, litr, dona
@@ -189,7 +168,7 @@ CREATE TABLE public.inventory_items (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.inventory_transactions (
+CREATE TABLE IF NOT EXISTS public.inventory_transactions (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     item_id UUID REFERENCES public.inventory_items(id) ON DELETE CASCADE,
     transaction_type TEXT NOT NULL CHECK (transaction_type IN ('in', 'out', 'adjustment')),
@@ -199,7 +178,7 @@ CREATE TABLE public.inventory_transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE public.recipe_ingredients (
+CREATE TABLE IF NOT EXISTS public.recipe_ingredients (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     menu_item_id UUID REFERENCES public.menu_items(id) ON DELETE CASCADE,
     inventory_item_id UUID REFERENCES public.inventory_items(id) ON DELETE CASCADE,
@@ -209,7 +188,7 @@ CREATE TABLE public.recipe_ingredients (
 );
 
 -- 8. WAITER CALLS
-CREATE TABLE public.waiter_calls (
+CREATE TABLE IF NOT EXISTS public.waiter_calls (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     table_id UUID REFERENCES public.tables(id) ON DELETE CASCADE,
     call_type TEXT NOT NULL CHECK (call_type IN ('call_waiter', 'request_bill', 'help_order', 'clean_table')),
@@ -504,5 +483,5 @@ WHERE name ILIKE '%osh%'
    OR name ILIKE '%dimlama%'
    OR name ILIKE '%chuchvara%';
 -- ==============================================================================
--- SCHEMA READY (Real Production - Demo seeds excluded)
+-- REAL PRODUCTION DATABASE SCHEMA READY
 -- ==============================================================================
