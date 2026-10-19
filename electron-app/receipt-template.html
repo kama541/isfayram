@@ -64,10 +64,12 @@
 </head>
 <body>
   <div class="logo-wrap">
-    <img id="logo-img" src="" alt="Logo" style="display:none;" />
+    <img id="logo-img" src="" alt="Logo" style="display:none; width: 130px; height: auto; margin: 0 auto 4px;" />
   </div>
-  <div class="restaurant-name" style="font-size: 22px; font-weight: 900; letter-spacing: 2px;">ISFAYRAM</div>
-  <div class="restaurant-sub" style="font-size: 15px; font-weight: 900; letter-spacing: 1.5px; color: #000; margin-bottom: 5px;">QUVASOY, UZ</div>
+  <div id="text-brand-header" style="text-align: center;">
+    <div class="restaurant-name" style="font-size: 18px; font-weight: 900; letter-spacing: 1px;">ISFAYRAM KAFE</div>
+    <div class="restaurant-sub" style="font-size: 13px; font-weight: 900; letter-spacing: 0.5px; color: #000; margin-bottom: 5px;">Quvasoy, UZ</div>
+  </div>
   <div class="divider-solid"></div>
   <div class="info">
     <span class="label">XONA / STOL</span>
@@ -93,6 +95,8 @@
         const img = document.getElementById('logo-img');
         img.src = data.logoBase64;
         img.style.display = 'block';
+        const txtHeader = document.getElementById('text-brand-header');
+        if (txtHeader) txtHeader.style.display = 'none';
       }
       const rawStation = data.stationName || '';
       let cleanStation = rawStation.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();

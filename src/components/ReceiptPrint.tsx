@@ -361,34 +361,15 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
             src={logoImg}
             alt="Isfayram Kafe"
             style={{
-              width: is58mm ? '26mm' : '34mm',
+              width: is58mm ? '28mm' : '38mm',
               height: 'auto',
-              maxHeight: is58mm ? '26mm' : '34mm',
+              maxHeight: is58mm ? '28mm' : '38mm',
               objectFit: 'contain',
               display: 'block',
-              margin: '0 auto 1.5mm',
+              margin: '0 auto 1mm',
               imageRendering: '-webkit-optimize-contrast' as any,
             }}
           />
-          <div style={{
-            fontSize: is58mm ? '15px' : '18px',
-            fontWeight: 900,
-            letterSpacing: '0.5px',
-            color: '#000',
-            lineHeight: '1.25',
-          }}>
-            Isfayram Kafe
-          </div>
-          <div style={{
-            fontSize: is58mm ? '12px' : '14px',
-            fontWeight: 900,
-            letterSpacing: '0.5px',
-            color: '#000',
-            lineHeight: '1.25',
-            marginTop: '0.8mm',
-          }}>
-            Quvasoy, UZ
-          </div>
         </div>
 
         {/* Double dashed separator matching Image 1 */}
