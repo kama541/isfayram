@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { Package, Plus, Search, AlertCircle, Trash2, Beaker, Save, ArrowRightLeft } from 'lucide-react';
+import { Package, Plus, Search, AlertCircle, Trash2, Beaker, Save, ArrowRightLeft, Flame } from 'lucide-react';
 
 export const InventoryManagement = () => {
   const { inventoryItems, addInventoryItem, updateInventoryItem, deleteInventoryItem, addInventoryTransaction, menuItems, recipeIngredients, setRecipe } = useStore();
@@ -81,10 +82,18 @@ export const InventoryManagement = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Package className="w-7 h-7 text-indigo-600" />
-            Omborxona (Inventory)
+            Ombor
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Xom-ashyo qoldig'ini va texnologik kartalarni (retsept) boshqarish</p>
+          <p className="text-slate-500 text-sm mt-1">Xomashyo va mahsulotlar qoldig'i</p>
         </div>
+
+        <Link
+          to="/admin/shashlik"
+          className="px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-500/30 flex items-center gap-2 font-bold text-xs transition-all shadow-sm"
+        >
+          <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          🍢 Shashlik Hisobi (Sixlar Nazorati)
+        </Link>
       </div>
 
       {/* Tabs */}
@@ -95,7 +104,7 @@ export const InventoryManagement = () => {
             activeTab === 'stock' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Ombor Qoldig'i
+          Mahsulotlar
         </button>
         <button
           onClick={() => setActiveTab('recipes')}
@@ -103,7 +112,7 @@ export const InventoryManagement = () => {
             activeTab === 'recipes' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          Retseptlar (Tex karta)
+          Retseptlar
         </button>
       </div>
 

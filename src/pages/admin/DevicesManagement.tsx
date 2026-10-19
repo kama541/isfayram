@@ -39,7 +39,7 @@ export const DevicesManagement = () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto font-sans">
-      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><Monitor /> Kompyuterlar (Qurilmalar)</h1>
+      <h1 className="text-2xl font-bold mb-6 flex items-center gap-2"><Monitor /> Qurilmalar</h1>
       <div className="grid gap-4">
         {computerDevices?.map(device => (
           <div key={device.id} className="bg-white p-5 rounded-2xl shadow border border-slate-100 flex justify-between items-center">

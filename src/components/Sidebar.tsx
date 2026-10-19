@@ -1,5 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Building2, Users, UserSquare2, BarChart3, ChefHat, LogOut, ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, Settings, UserIcon, X, Monitor, ShieldCheck } from 'lucide-react';
+import { 
+  Building2, Users, UserSquare2, BarChart3, ChefHat, LogOut, 
+  ClipboardList, Calendar, Banknote, BookOpen, Grid, ShoppingCart, 
+  Settings, UserIcon, X, ShieldCheck, Package, Trash2, 
+  ReceiptText, Smartphone, History, LayoutDashboard, Monitor, Flame, ListX
+} from 'lucide-react';
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import type { Role } from '../types';
@@ -10,34 +15,48 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const adminLinks = [
-  { name: 'Xonalar', path: '/admin/tables', icon: Grid },
+const adminManagementLinks = [
+  { name: 'Bosh sahifa', path: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Buyurtmalar', path: '/admin/orders', icon: ClipboardList },
+  { name: 'Bekor qilinganlar', path: '/admin/cancelled-orders', icon: Trash2 },
+  { name: 'Stollar', path: '/admin/tables', icon: Grid },
+  { name: 'Menyu', path: '/admin/menu', icon: BookOpen },
+  { name: 'Stop & Go List', path: '/admin/stop-list', icon: ListX },
+  { name: 'Oshxona', path: '/admin/kitchens', icon: ChefHat },
   { name: 'Xodimlar', path: '/admin/staff', icon: Users },
-  { name: 'Mijozlar', path: '/admin/customers', icon: UserSquare2 },
-  { name: 'Oshxonalar', path: '/admin/kitchens', icon: ChefHat },
-  { name: 'Taomlar', path: '/admin/menu', icon: BookOpen },
+  { name: 'Moliya', path: '/admin/finance', icon: Banknote },
   { name: 'Hisobotlar', path: '/admin/reports', icon: BarChart3 },
-  { name: 'Kompyuterlar', path: '/admin/devices', icon: Monitor },
+  { name: 'Ombor', path: '/admin/inventory', icon: Package },
+  { name: 'Shashlik & Somsa', path: '/admin/shashlik', icon: Flame },
+  { name: 'Mijozlar', path: '/admin/customers', icon: UserSquare2 },
+  { name: 'Qurilmalar', path: '/admin/devices', icon: Monitor },
   { name: 'Sozlamalar', path: '/admin/settings', icon: Settings },
-  { name: 'Kassir Panel', path: '/cashier', icon: ClipboardList },
-  { name: 'Ofitsiant Panel', path: '/waiter', icon: Grid },
 ];
+
+const adminQuickPosLinks = [
+  { name: 'Kassa', path: '/cashier', icon: ReceiptText },
+  { name: 'Ofitsiant', path: '/waiter', icon: Smartphone },
+];
+
+const adminLinks = [...adminManagementLinks, ...adminQuickPosLinks];
 
 const cashierLinks = [
   { name: 'Buyurtmalar', path: '/cashier', icon: ClipboardList },
-  { name: 'Tarix', path: '/cashier/orders', icon: ClipboardList },
-  { name: 'Oshxona', path: '/cashier/kitchen', icon: ChefHat },
+  { name: 'Stop & Go List', path: '/cashier/stop-list', icon: ListX },
+  { name: 'Buyurtmalar Tarixi', path: '/cashier/orders', icon: History },
+  { name: 'Oshxona (KDS)', path: '/cashier/kitchen', icon: ChefHat },
   { name: 'Bronlar', path: '/cashier/reservations', icon: Calendar },
-  { name: 'Mijozlar', path: '/cashier/customers', icon: Users },
-  { name: 'Kassa', path: '/cashier/finance', icon: Banknote },
-  { name: 'Taomlar', path: '/cashier/menu', icon: BookOpen },
+  { name: 'Mijozlar Bazasi', path: '/cashier/customers', icon: UserSquare2 },
+  { name: 'Kassa & Kirim', path: '/cashier/finance', icon: Banknote },
+  { name: 'Taomlar Menyusi', path: '/cashier/menu', icon: BookOpen },
   { name: 'Sozlamalar', path: '/cashier/settings', icon: Settings },
 ];
 
 const waiterLinks = [
-  { name: 'Xonalar', path: '/waiter', icon: Grid },
+  { name: 'Xonalar & Stollar', path: '/waiter', icon: Grid },
   { name: 'Yangi Buyurtma', path: '/waiter/new-order', icon: ShoppingCart },
-  { name: 'Taomlar', path: '/waiter/menu', icon: BookOpen },
+  { name: 'Taomlar Menyusi', path: '/waiter/menu', icon: BookOpen },
+  { name: 'Sozlamalar', path: '/waiter/settings', icon: Settings },
 ];
 
 export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
@@ -111,22 +130,49 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto scrollbar-hide pb-4">
         {role === 'admin' && (
           <>
-            {adminLinks.map((link) => {
+            {adminManagementLinks.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.path || (link.path !== '/admin' && location.pathname.startsWith(link.path));
+              return (
+                <div key={link.path}>
+                  <Link
+                    to={link.path}
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5"
+                    style={isActive
+                      ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37', borderLeft: '3px solid #D4AF37' }
+                      : { color: '#8A8070' }
+                    }
+                  >
+                    <Icon className="w-5 h-5 shrink-0" />
+                    <span className="text-base font-bold">{link.name}</span>
+                  </Link>
+                </div>
+              );
+            })}
+
+            {/* Quick POS Mode Switch */}
+            <div className="pt-3 pb-1 px-3 mt-2 border-t" style={{ borderColor: 'rgba(212,175,55,0.1)' }}>
+              <div className="text-[10px] uppercase tracking-[0.2em] font-semibold" style={{ color: '#6C6659' }}>
+                Tezkor o'tish
+              </div>
+            </div>
+
+            {adminQuickPosLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path || location.pathname.startsWith(link.path);
               if (link.path === '/waiter') {
                 return (
                   <div key={link.path}>
                     <button
                       onClick={() => setShowWaiterModal(true)}
-                      className="w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
+                      className="w-full group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5"
                       style={isActive
                         ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37' }
                         : { color: '#8A8070' }
                       }
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span className="text-[14px] font-medium">{link.name}</span>
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span className="text-base font-bold">{link.name}</span>
                     </button>
                   </div>
                 );
@@ -135,14 +181,14 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
                 <div key={link.path}>
                   <Link
                     to={link.path}
-                    className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/5"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5"
                     style={isActive
-                      ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37', borderLeft: '2px solid #D4AF37' }
+                      ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37', borderLeft: '3px solid #D4AF37' }
                       : { color: '#8A8070' }
                     }
                   >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="text-[14px] font-medium">{link.name}</span>
+                    <Icon className="w-5 h-5 shrink-0" />
+                    <span className="text-base font-bold">{link.name}</span>
                   </Link>
                 </div>
               );
@@ -157,14 +203,14 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
             <Link
               key={link.path}
               to={link.path}
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/5"
+              className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5"
               style={isActive
-                ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37', borderLeft: '2px solid #D4AF37' }
+                ? { background: 'rgba(212,175,55,0.15)', color: '#D4AF37', borderLeft: '3px solid #D4AF37' }
                 : { color: '#8A8070' }
               }
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="font-medium text-[14px]">{link.name}</span>
+              <Icon className="w-5 h-5 shrink-0" />
+              <span className="font-bold text-base">{link.name}</span>
             </Link>
           );
         })}
@@ -173,11 +219,11 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
           <div className="pt-4 mt-2 border-t" style={{ borderColor: 'rgba(212,175,55,0.1)' }}>
             <Link
               to="/admin"
-              className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 hover:bg-white/5"
+              className="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-white/5"
               style={{ color: '#D4AF37' }}
             >
-              <Building2 className="w-4 h-4 shrink-0" />
-              <span className="text-[14px] font-bold">Admin Panelga Qaytish</span>
+              <Building2 className="w-5 h-5 shrink-0" />
+              <span className="text-base font-black">Admin Panelga Qaytish</span>
             </Link>
           </div>
         )}
@@ -186,7 +232,7 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
       {/* User Profile */}
       <div className="p-4 mt-auto" style={{ borderTop: '1px solid rgba(212,175,55,0.1)' }}>
         <div
-          className="flex items-center justify-between px-3 py-3 cursor-pointer rounded-xl transition-all duration-200 hover:bg-white/5"
+          className="flex items-center justify-between px-4 py-3.5 cursor-pointer rounded-2xl transition-all duration-200 hover:bg-white/5 active:scale-98"
           onClick={() => {
             sessionStorage.setItem('explicitLogout', 'true');
             localStorage.removeItem('currentUser');
@@ -195,17 +241,17 @@ export const Sidebar = ({ role, open = false, onClose }: SidebarProps) => {
           }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
-              style={{ background: 'rgba(212,175,55,0.2)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)' }}
+            <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-base"
+              style={{ background: 'rgba(212,175,55,0.2)', color: '#D4AF37', border: '1.5px solid rgba(212,175,55,0.35)' }}
             >
               {userInitial}
             </div>
             <div>
-              <div className="font-bold text-sm truncate max-w-[120px]" style={{ color: '#F5F2EA' }}>{userName}</div>
-              <div className="text-[11px] mt-0.5" style={{ color: '#6C6659' }}>{roleLabel}dan chiqish</div>
+              <div className="font-extrabold text-base truncate max-w-[130px]" style={{ color: '#F5F2EA' }}>{userName}</div>
+              <div className="text-xs font-semibold mt-0.5" style={{ color: '#6C6659' }}>{roleLabel}dan chiqish</div>
             </div>
           </div>
-          <LogOut className="w-4 h-4" style={{ color: '#6C6659' }} />
+          <LogOut className="w-5 h-5" style={{ color: '#6C6659' }} />
         </div>
       </div>
     </aside>

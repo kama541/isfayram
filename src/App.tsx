@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Power, Monitor, XCircle } from 'lucide-react';
+import { Power } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { GlobalUI } from './components/GlobalUI';
 import { RemotePrintListener } from './components/RemotePrintListener';
@@ -18,6 +18,7 @@ import { useStore } from './store/useStore';
 import { supabase } from './lib/supabase';
 import { ErrorBoundary } from './ErrorBoundary';
 import { AdminLogin } from './pages/admin/AdminLogin';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { FinanceManagement } from './pages/admin/FinanceManagement';
 import { CameraManagement } from './pages/admin/CameraManagement';
 import { InventoryManagement } from './pages/admin/InventoryManagement';
@@ -35,7 +36,9 @@ import { CashierTables } from './pages/cashier/CashierTables';
 import { Customers } from './pages/cashier/Customers';
 import { Reservations } from './pages/cashier/Reservations';
 import { KitchenDashboard } from './pages/kitchen/KitchenDashboard';
-import { printReceiptElement } from './utils/printReceipt';
+import { CancelledOrders } from './pages/admin/CancelledOrders';
+import { ShashlikManagement } from './pages/admin/ShashlikManagement';
+import { StopListManagement } from './pages/cashier/StopListManagement';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: string[] }) => {
   const userStr = localStorage.getItem('currentUser');
@@ -71,19 +74,22 @@ const SystemClosedWrapper = ({ children }: { children: React.ReactNode }) => {
             <div className="bg-white p-6 rounded-2xl shadow-xl w-80">
               <h3 className="text-lg font-bold mb-4">Maxfiy kodni kiriting</h3>
               <input 
-                type="password" 
+                type="text" 
                 value={pinValue}
                 onChange={(e) => setPinValue(e.target.value)}
                 autoFocus
-                className="w-full border rounded-lg p-2 mb-4"
+                autoComplete="off"
+                data-lpignore="true"
+                style={{ WebkitTextSecurity: 'disc' } as any}
+                className="w-full border rounded-lg p-2 mb-4 font-mono"
                 placeholder="PIN kod"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const pin = pinValue;
                     if (pin) {
-                      const employees = useStore.getState().employees || [];
-                      const isAdmin = pin === '111111' || pin === 'admin' || pin === '+998916769198' || pin === '916769198' || 
-                                      employees.some(e => e.pinCode === pin && ((e.role as string) === 'admin' || e.fullName.toLowerCase().includes('admin')));
+                      const cleanPin = pin.trim();
+                      const normPin = cleanPin.replace(/\s+/g, '');
+                      const isAdmin = cleanPin === '181992' || normPin === '181992' || cleanPin === '18 19 92';
                       if (isAdmin) {
                         useStore.getState().setSystemOpen(true);
                         setShowPinModal(false);
@@ -106,9 +112,9 @@ const SystemClosedWrapper = ({ children }: { children: React.ReactNode }) => {
                   onClick={() => {
                     const pin = pinValue;
                     if (pin) {
-                      const employees = useStore.getState().employees || [];
-                      const isAdmin = pin === '111111' || pin === 'admin' || pin === '+998916769198' || pin === '916769198' || 
-                                      employees.some(e => e.pinCode === pin && ((e.role as string) === 'admin' || e.fullName.toLowerCase().includes('admin')));
+                      const cleanPin = pin.trim();
+                      const normPin = cleanPin.replace(/\s+/g, '');
+                      const isAdmin = cleanPin === '181992' || normPin === '181992' || cleanPin === '18 19 92';
                       if (isAdmin) {
                         useStore.getState().setSystemOpen(true);
                         setShowPinModal(false);
@@ -150,249 +156,6 @@ const SystemClosedWrapper = ({ children }: { children: React.ReactNode }) => {
 };
 
 const DeviceRegistrationWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { computerDevices, users, isLoading } = useStore();
-  const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [adminSetupMode, setAdminSetupMode] = useState(false);
-  const [adminLogin, setAdminLogin] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
-  const location = useLocation();
-
-  const isAdminRoute = location.pathname.startsWith('/admin');
-
-  useEffect(() => {
-    let id = localStorage.getItem('device_id');
-    if (!id) {
-      id = 'PC-' + Math.random().toString(16).slice(2, 8).toUpperCase();
-      localStorage.setItem('device_id', id);
-    }
-    setDeviceId(id);
-    
-    // Create unregistered record if it doesn't exist
-    const checkAndRegister = async () => {
-      try {
-        const { data } = await supabase.from('computer_devices').select('*').eq('computer_id', id).single();
-        if (!data) {
-          await supabase.from('computer_devices').insert({ computer_id: id, status: 'unregistered', assigned_role: 'none' });
-          useStore.getState().silentFetch();
-        } else {
-          await supabase.from('computer_devices').update({ last_seen_at: new Date().toISOString() }).eq('computer_id', id);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    checkAndRegister();
-  }, []);
-
-  const device = computerDevices?.find(d => d.computer_id === deviceId);
-  const hasAdmin = users?.some(u => u.role === 'admin') || computerDevices?.some(d => d.assigned_role === 'admin' && d.status === 'active');
-
-  useEffect(() => {
-    if (!isLoading) {
-       setAdminSetupMode(!hasAdmin);
-    }
-  }, [isLoading, hasAdmin]);
-
-  // Auto-login logic
-  useEffect(() => {
-    if (isAdminRoute) return;
-    if (device && device.status === 'active' && device.assigned_role !== 'none') {
-      if (sessionStorage.getItem('explicitLogout') === 'true') {
-        return; // Skip auto-login if user explicitly logged out
-      }
-      const userStr = localStorage.getItem('currentUser');
-      const currentUser = userStr ? JSON.parse(userStr) : null;
-      if (!currentUser || currentUser.role !== device.assigned_role) {
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: device.id, // we use device uuid as waiterId or cashierId
-          fullName: device.computer_name || device.computer_id,
-          role: device.assigned_role
-        }));
-        if (window.location.pathname === '/login' || window.location.pathname === '/') {
-          window.location.href = `/${device.assigned_role}`;
-        }
-      }
-    } else if (device && device.status !== 'active') {
-      localStorage.removeItem('currentUser');
-    }
-  }, [device, isAdminRoute]);
-
-  if (adminSetupMode && deviceId) {
-    return (
-      <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center font-sans text-white p-6">
-        <Monitor className="w-16 h-16 mb-4 text-emerald-500" />
-        <h1 className="text-2xl font-bold mb-8 uppercase tracking-widest text-emerald-400">ISFAYRAM KAFE — Birinchi Admin sozlamasi</h1>
-        <div className="bg-white/10 p-8 rounded-3xl border border-white/20 w-full max-w-md">
-          <div className="mb-6 flex justify-between items-center bg-black/20 p-4 rounded-xl">
-            <div>
-              <p className="text-xs text-slate-400">Computer ID</p>
-              <p className="font-mono font-bold text-lg">{deviceId}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400 text-right">Kompyuter nomi</p>
-              <p className="font-bold text-lg text-emerald-400">Admin kompyuter</p>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Admin login</label>
-              <input type="text" value={adminLogin} onChange={e => setAdminLogin(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none" placeholder="Login" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Admin parol</label>
-              <input type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none" placeholder="Parol" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Parolni tasdiqlash</label>
-              <input type="password" value={adminPasswordConfirm} onChange={e => setAdminPasswordConfirm(e.target.value)} className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500 outline-none" placeholder="Parolni takrorlang" />
-            </div>
-            <button 
-              onClick={async () => {
-                if (!adminLogin || adminPassword.length < 6) return alert('Login va kamida 6 xonali parol kiriting');
-                if (adminPassword !== adminPasswordConfirm) return alert('Parollar mos emas');
-                
-                try {
-                  const sanitizedLogin = adminLogin.trim().toLowerCase();
-                  const email = sanitizedLogin.includes('@') 
-                    ? sanitizedLogin 
-                    : `${sanitizedLogin.replace(/[^a-z0-9]/g, '') || 'admin'}@isfayram.com`;
-                  
-                  // 1. Supabase Auth user yaratish
-                  const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email,
-                    password: adminPassword,
-                  });
-                  if (authError) throw new Error("Auth xatosi: " + authError.message);
-                  if (!authData.user) throw new Error("Auth user yaratilmadi");
-
-                  // 2. Admin profile yaratish
-                  const { error: profileError } = await supabase.from('profiles').insert({
-                    id: authData.user.id,
-                    role: 'admin',
-                    full_name: adminLogin
-                  });
-                  if (profileError) throw new Error("Profile xatosi: " + profileError.message);
-
-                  // 3. Computer device yaratish / yangilash
-                  const { data: existing } = await supabase.from('computer_devices').select('*').eq('computer_id', deviceId).single();
-                  
-                  if (existing) {
-                    const { error: err1 } = await supabase.from('computer_devices').update({
-                      computer_name: 'Admin kompyuter',
-                      assigned_role: 'admin',
-                      status: 'active',
-                      registered_at: new Date().toISOString(),
-                      registered_by: authData.user.id
-                    }).eq('computer_id', deviceId);
-                    if (err1) throw new Error("Device update xatosi: " + err1.message);
-                  } else {
-                    const { error: err2 } = await supabase.from('computer_devices').insert({
-                      computer_id: deviceId,
-                      computer_name: 'Admin kompyuter',
-                      assigned_role: 'admin',
-                      status: 'active',
-                      registered_at: new Date().toISOString(),
-                      registered_by: authData.user.id
-                    });
-                    if (err2) throw new Error("Device insert xatosi: " + err2.message);
-                  }
-                  
-                  // 4. (Optional) Legacy PIN support
-                  await supabase.from('employees').insert({
-                    full_name: adminLogin,
-                    role: 'admin',
-                    pin_code: adminPassword,
-                    is_active: true
-                  });
-                  
-                  // 5. Muvaffaqiyatli yakun
-                  await useStore.getState().silentFetch();
-                  alert("Admin kompyuter muvaffaqiyatli ro'yxatdan o'tdi!");
-                  window.location.reload();
-                } catch (error: any) {
-                  alert("Xatolik yuz berdi: " + (error.message || JSON.stringify(error)));
-                }
-              }}
-              className="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl transition-colors"
-            >
-              Admin sifatida ro'yxatdan o'tish
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Never block admin routes with device check
-  if (isAdminRoute) {
-    return <>{children}</>;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#13120F] flex flex-col items-center justify-center font-sans">
-        <div className="w-12 h-12 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // If devices table is not used/loaded, fallback to allowing normal access
-  if (!deviceId || device === undefined) {
-    return <>{children}</>;
-  }
-
-  if (device.status === 'unregistered') {
-    return (
-      <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center font-sans text-white p-6">
-        <Monitor className="w-20 h-20 mb-6 text-amber-500" />
-        <h1 className="text-3xl font-bold mb-4">Bu kompyuter hali ro'yxatdan o'tmagan</h1>
-        <p className="text-xl text-slate-300 mb-8">Admin tomonidan tasdiqlanishini kuting.</p>
-        <div className="bg-white/10 p-6 rounded-2xl border border-white/20 text-center min-w-[300px]">
-          <p className="text-sm text-slate-400 mb-1">Computer ID</p>
-          <p className="text-2xl font-mono font-bold tracking-wider">{deviceId}</p>
-          <div className="mt-4 inline-block bg-amber-500/20 text-amber-500 px-4 py-2 rounded-full font-bold">
-            Holat: Ro'yxatdan o'tmagan
-          </div>
-        </div>
-        <div className="mt-8">
-          <a
-            href="/admin/login"
-            className="inline-flex items-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95"
-          >
-            Admin sifatida kirish
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  if (device.status === 'inactive') {
-    return (
-      <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center font-sans text-white p-6">
-        <XCircle className="w-20 h-20 mb-6 text-red-500" />
-        <h1 className="text-3xl font-bold mb-4 text-center">Bu kompyuter Admin tomonidan faolsizlantirilgan.</h1>
-        <p className="text-xl text-slate-300 mb-8">Iltimos adminga murojaat qiling.</p>
-        <div className="bg-white/10 p-6 rounded-2xl border border-white/20 text-center min-w-[300px]">
-          <p className="text-sm text-slate-400 mb-1">Computer ID</p>
-          <p className="text-2xl font-mono font-bold tracking-wider">{deviceId}</p>
-          <div className="mt-4 inline-block bg-red-500/20 text-red-500 px-4 py-2 rounded-full font-bold">
-            Holat: Faolsiz
-          </div>
-        </div>
-        <div className="mt-8">
-          <a
-            href="/admin/login"
-            className="inline-flex items-center gap-2 px-6 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95"
-          >
-            Admin sifatida kirish
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 };
 
@@ -442,12 +205,14 @@ function App() {
               <Route path="/admin/login" element={<AdminLogin />} />
 
               {/* Admin Routes */}
-              <Route path="/admin" element={<Navigate to="/admin/reports" replace />} />
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><AdminDashboard /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/finance" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><FinanceManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/tables" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><TablesManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/qr" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><QRMenu /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/staff" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StaffManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/inventory" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><InventoryManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/shashlik" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><ShashlikManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/invoices" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Invoices /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/purchases" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Purchases /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/fiscal" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Fiscalization /></DashboardLayout></ProtectedRoute>} />
@@ -457,7 +222,9 @@ function App() {
               {/* Other legacy admin routes that might be referenced but not in the main sidebar */}
               <Route path="/admin/kitchens" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><KitchenManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/menu" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/stop-list" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><StopListManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><OrdersManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/admin/cancelled-orders" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><CancelledOrders /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Reports /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/cameras" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><CameraManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/admin/customers" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLayout role="admin"><Customers /></DashboardLayout></ProtectedRoute>} />
@@ -466,6 +233,7 @@ function App() {
 
               {/* Cashier Routes */}
               <Route path="/cashier" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierDashboard /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/cashier/stop-list" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><StopListManagement /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/tables" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><CashierTables /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/kitchen" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><KDS department="all" /></DashboardLayout></ProtectedRoute>} />
               <Route path="/cashier/reservations" element={<ProtectedRoute allowedRoles={['cashier', 'admin']}><DashboardLayout role="cashier"><Reservations /></DashboardLayout></ProtectedRoute>} />
@@ -481,6 +249,7 @@ function App() {
               <Route path="/waiter" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><WaiterDashboard /></DashboardLayout></ProtectedRoute>} />
               <Route path="/waiter/new-order" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><NewOrder /></DashboardLayout></ProtectedRoute>} />
               <Route path="/waiter/menu" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><MenuManagement /></DashboardLayout></ProtectedRoute>} />
+              <Route path="/waiter/settings" element={<ProtectedRoute allowedRoles={['waiter', 'admin']}><DashboardLayout role="waiter"><Settings role="waiter" /></DashboardLayout></ProtectedRoute>} />
 
               {/* Customer QR Routes */}
               <Route path="/menu/:tableId" element={<CustomerMenu />} />

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "build:sync": "vite build && powershell -Command \"Remove-Item -Recurse -Force electron-app/ui/*; Copy-Item -Recurse -Force dist/* electron-app/ui/\"",
+    "build:exe": "vite build && powershell -Command \"Remove-Item -Recurse -Force electron-app/ui/*; Copy-Item -Recurse -Force dist/* electron-app/ui/\" && cd electron-app && npm run build:installer && powershell -Command \"$f = Get-ChildItem dist/'Isfayram POS Setup *.exe' | Sort-Object LastWriteTime -Descending | Select-Object -First 1; Copy-Item -Force $f.FullName ../'Isfayram POS Setup.exe'; Copy-Item -Force $f.FullName 'C:/Users/kamron/OneDrive/Desktop/Isfayram POS Setup.exe'; Copy-Item -Force $f.FullName ('C:/Users/kamron/OneDrive/Desktop/' + $f.Name)\"",
     "lint": "oxlint",
     "preview": "vite preview"
   },

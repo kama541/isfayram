@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('electronApi', {
   isElectron: true,
 
   // Print the main window silently (for cashier receipt, schet, etc.)
-  printMainWindowSilent: () => ipcRenderer.invoke('print-main-window-silent'),
+  printMainWindowSilent: (opts) => ipcRenderer.invoke('print-main-window-silent', opts),
 
   // Print cashier receipt HTML in a hidden window (reliable, independent of page layout)
   printReceiptHtml: (html) => ipcRenderer.invoke('print-receipt-html', html),
@@ -30,5 +30,13 @@ contextBridge.exposeInMainWorld('electronApi', {
     const listener = (_, order) => callback(order);
     ipcRenderer.on('trigger-print', listener);
     return () => ipcRenderer.removeListener('trigger-print', listener);
-  }
+  },
+
+  // Hosted POS URL management for direct cloud sync
+  getHostedUrl: () => ipcRenderer.invoke('get-hosted-url'),
+  setHostedUrl: (url) => ipcRenderer.invoke('set-hosted-url', url),
+  reloadApp: () => ipcRenderer.invoke('reload-app'),
+
+  // Test printer connectivity (Windows queue or Network IP)
+  testPrinter: (target) => ipcRenderer.invoke('test-printer', target),
 });

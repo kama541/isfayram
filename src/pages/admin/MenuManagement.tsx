@@ -23,7 +23,8 @@ export const MenuManagement = () => {
 
   const storedUser = localStorage.getItem('currentUser');
   const currentUser = storedUser ? JSON.parse(storedUser) : null;
-  const hasManagePermission = currentUser?.role === 'admin' || currentUser?.role === 'cashier';
+  const adminUser = localStorage.getItem('adminUser');
+  const hasManagePermission = currentUser?.role === 'admin' || currentUser?.role === 'cashier' || !!adminUser;
 
   const filteredItems = activeCategory ? menuItems.filter(m => m.categoryId === activeCategory) : menuItems;
 
@@ -97,8 +98,8 @@ export const MenuManagement = () => {
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Menyu Boshqaruvi</h1>
-          <p className="text-slate-500 text-sm mt-1">Taomlar va toifalar ro'yxati</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Menyu</h1>
+          <p className="text-slate-500 text-sm mt-1">Taomlar va toifalar</p>
         </div>
         {hasManagePermission && (
           <button 
@@ -138,6 +139,7 @@ export const MenuManagement = () => {
                   e.stopPropagation();
                   if(window.confirm(`Haqiqatan ham "${c.name}" kategoriyasini o'chirmoqchimisiz?`)) {
                     useStore.getState().deleteCategory(c.id);
+                    if (activeCategory === c.id) setActiveCategory('');
                   }
                 }}
                 className="p-1 hover:bg-red-500/20 text-red-400 rounded-md transition-colors"
@@ -227,15 +229,20 @@ export const MenuManagement = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Qaysi xonaga yuboriladi?</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Qaysi oshxona xonasiga yuboriladi?</label>
                 <select 
                   value={newItem.kitchenStationId || ''} 
                   onChange={e => setNewItem({...newItem, kitchenStationId: e.target.value})} 
                   className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
                   required
                 >
-                  <option value="" disabled>Tanlang...</option>
-                  {kitchenStations.filter(k => k.isActive).map(k => (
+                  <option value="" disabled>Xonani tanlang...</option>
+                  {(kitchenStations.filter(k => k.isActive).length > 0 ? kitchenStations.filter(k => k.isActive) : [
+                    { id: '525ef16d-b118-4942-8617-41a90b39e64d', name: '🔥 Shashlik Room' },
+                    { id: '16b9952b-1b9e-40f1-871f-2179ff167d3f', name: '🐟 Fish Room' },
+                    { id: 'cd884f76-4022-4ae0-863e-a6f4405fae61', name: '🫓 Tandir' },
+                    { id: '4b29fc40-ca47-1067-b31d-00dd010662db', name: '🥤 Bar' }
+                  ]).map(k => (
                     <option key={k.id} value={k.id}>{k.name}</option>
                   ))}
                 </select>

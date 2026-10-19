@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import type { ComputerDevice, Category, MenuItem, Table, User, Order, WaiterCall, Employee, Expense, InventoryItem, RecipeIngredient, InventoryTransaction, NotebookEntry, KitchenStation } from '../types';
+import type { ComputerDevice, Category, MenuItem, Table, User, Order, WaiterCall, Employee, Expense, InventoryItem, RecipeIngredient, InventoryTransaction, NotebookEntry, KitchenStation, ReceiptSettings } from '../types';
 import { formatOrderId } from '../utils/format';
 
 interface StoreState {
@@ -22,7 +22,7 @@ interface StoreState {
   isRealtimeInitialized: boolean;
   isSystemOpen: boolean;
   theme: 'light' | 'dark';
-  receiptSettings: { title: string; address: string; footer1: string; footer2: string };
+  receiptSettings: ReceiptSettings;
   
   // Actions
   fetchInitialData: () => Promise<void>;
@@ -43,11 +43,11 @@ interface StoreState {
   deleteTable: (id: string) => Promise<void>;
   updateTableStatus: (id: string, status: Table['status']) => void;
   
-  createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<void>;
+  createOrder: (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>) => Promise<any>;
+  addItemsToOrder: (orderId: string, items: any[], additionalAmount: number) => Promise<any>;
   updateOrderTable: (orderId: string, newTableId: string) => Promise<void>;
-  updateOrderWaiter: (orderId: string, newWaiterId: string) => Promise<void>;
-  updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card' | 'mixed') => void;
+  updateOrderStatus: (id: string, status: Order['status'], paymentMethod?: 'cash' | 'card' | 'mixed', cancellationDetails?: { reason?: string; cancelledBy?: string }) => Promise<void>;
+  cancelOrder: (orderId: string, reason?: string, cancelledBy?: string) => Promise<void>;
   removeOrderItem: (orderId: string, itemId: string, itemTotal: number) => Promise<void>;
   updateOrderItemQuantity: (orderId: string, itemId: string, newQuantity: number, newTotalPrice: number) => Promise<void>;
   
@@ -75,13 +75,38 @@ interface StoreState {
   // System actions
   setSystemOpen: (isOpen: boolean) => Promise<void>;
   setTheme: (theme: 'light' | 'dark') => void;
-  updateReceiptSettings: (settings: { title: string; address: string; footer1: string; footer2: string }) => Promise<void>;
+  updateReceiptSettings: (settings: ReceiptSettings) => Promise<void>;
 
   addKitchenStation: (station: Omit<KitchenStation, 'id' | 'isActive'>) => Promise<void>;
   updateKitchenStation: (station: KitchenStation) => Promise<void>;
-  deleteKitchenStation: (id: string) => Promise<void>;
   updateOrderItemStatus: (orderId: string, itemId: string, status: any) => Promise<void>;
+  markOrderItemsReady: (orderId: string, itemIds: string[]) => Promise<void>;
 }
+
+const getStoredReceiptSettings = (): ReceiptSettings => {
+  const defaults: ReceiptSettings = {
+    title: 'ISFAYRAM KAFE',
+    address: 'Quvasoy, UZ',
+    footer1: 'Доставка: +998 95 034 31 15   +998 93 229 88 96',
+    footer2: 'Спасибо за визит!',
+    paperWidth: '80mm',
+    printerName: '',
+    autoPrintOnPayment: false,
+    serviceChargePercent: 10
+  };
+  try {
+    const raw = localStorage.getItem('receiptSettings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { 
+        ...defaults, 
+        ...parsed, 
+        serviceChargePercent: parsed.serviceChargePercent !== undefined ? Number(parsed.serviceChargePercent) : 10 
+      };
+    }
+  } catch (e) {}
+  return defaults;
+};
 
 export const useStore = create<StoreState>((set, get) => ({
   users: [],
@@ -102,7 +127,7 @@ export const useStore = create<StoreState>((set, get) => ({
   isRealtimeInitialized: false,
   isSystemOpen: true,
   theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'light',
-  receiptSettings: { title: 'Isfayram Kafe', address: 'Quvasoy, UZ', footer1: 'Доставка 95 034 31 15', footer2: 'Спасибо за визит!' },
+  receiptSettings: getStoredReceiptSettings(),
 
   initRealtime: () => {
     if (get().isRealtimeInitialized) return;
@@ -125,6 +150,16 @@ export const useStore = create<StoreState>((set, get) => ({
       
     supabase.channel('public:computer_devices')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'computer_devices' }, () => {
+         get().silentFetch();
+      }).subscribe();
+
+    supabase.channel('public:tables')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tables' }, () => {
+         get().silentFetch();
+      }).subscribe();
+
+    supabase.channel('public:payments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
          get().silentFetch();
       }).subscribe();
 
@@ -185,23 +220,50 @@ export const useStore = create<StoreState>((set, get) => ({
         id: t.id, number: t.table_number, status: ['available', 'occupied', 'ordered', 'cleaning', 'closed'].includes(t.status) ? t.status as any : 'available', seats: t.capacity
       }));
       const orders: Order[] = (ordersData || []).map(o => {
-        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => ({
-          id: oi.id, menuItemId: oi.menu_item_id, quantity: oi.quantity, price: Number(oi.unit_price), notes: oi.special_instructions || '',
-          kitchenStationId: oi.kitchen_station_id, status: oi.status
-        }));
+        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => {
+          const menuItem = (menuItemsData || []).find(m => m.id === oi.menu_item_id);
+          const cat = (categoriesData || []).find(c => c.id === menuItem?.category_id);
+          return {
+            id: oi.id,
+            menuItemId: oi.menu_item_id,
+            name: menuItem?.name || oi.special_instructions || 'Taom',
+            categoryName: cat?.name || '',
+            quantity: oi.quantity,
+            price: Number(oi.unit_price),
+            notes: oi.special_instructions || '',
+            kitchenStationId: oi.kitchen_station_id || menuItem?.kitchen_station_id,
+            status: oi.status
+          };
+        });
         
         const payment = (paymentsData || []).find((p: any) => p.order_id === o.id);
+        const resolvedMethod = payment ? (['bank_card', 'uzcard', 'humo'].includes(payment.payment_method) ? 'card' : payment.payment_method) : undefined;
         
+        let notesObj: any = null;
+        try {
+          if (o.notes && (o.notes.startsWith('{') || o.notes.startsWith('['))) {
+            notesObj = JSON.parse(o.notes);
+          }
+        } catch {
+          notesObj = null;
+        }
+
+        const cancelledAt = (o as any).cancelled_at || notesObj?.cancelled_at || (o.status === 'cancelled' ? o.updated_at : undefined);
+        const cancelledBy = (o as any).cancelled_by || notesObj?.cancelled_by || (o.status === 'cancelled' ? 'Admin' : undefined);
+        const cancellationReason = (o as any).cancellation_reason || notesObj?.cancellation_reason || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : (o.status === 'cancelled' ? "Sabab ko'rsatilmadi" : undefined));
+
         return {
           id: o.id, tableId: o.table_id || '', waiterId: o.waiter_id, status: o.status, items,
-          totalAmount: Number(o.total_amount), paymentMethod: payment ? payment.payment_method : undefined, createdAt: o.created_at, updatedAt: o.updated_at
+          totalAmount: Number(o.total_amount), paymentMethod: resolvedMethod,
+          cancelledAt, cancelledBy, cancellationReason, notes: o.notes,
+          createdAt: o.created_at, updatedAt: o.updated_at
         };
       });
       const waiterCalls: WaiterCall[] = (callsData || []).map(c => ({
         id: c.id, tableId: c.table_id || '', status: c.status === 'new' ? 'pending' : 'resolved', createdAt: c.created_at
       }));
       const employees: Employee[] = (employeesData || []).map(e => ({
-        id: e.id, fullName: e.full_name, role: e.role, pinCode: e.pin_code, isActive: e.is_active, createdAt: e.created_at,
+        id: e.id, fullName: e.full_name, role: e.role, pinCode: e.pin_code?.split('_')[0] || e.pin_code, isActive: e.is_active, createdAt: e.created_at,
         kitchenStationIds: e.kitchen_station_ids || []
       }));
       const expenses: Expense[] = (expensesData || []).map(e => ({
@@ -228,11 +290,16 @@ export const useStore = create<StoreState>((set, get) => ({
       }));
 
       const isSystemOpen = settingsData ? settingsData.find((s: any) => s.key === 'is_system_open')?.value !== 'false' : true;
-      const receiptSettings = {
-        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || 'Isfayram Kafe',
-        address: settingsData?.find((s: any) => s.key === 'receipt_address')?.value || 'Quvasoy, UZ',
-        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || 'Доставка 95 034 31 15',
-        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value || 'Спасибо за визит!'
+      const localSaved = getStoredReceiptSettings();
+      const receiptSettings: ReceiptSettings = {
+        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || localSaved.title || 'ISFAYRAM KAFE',
+        address: settingsData?.find((s: any) => s.key === 'receipt_address')?.value || localSaved.address || 'Quvasoy, UZ',
+        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || localSaved.footer1 || 'Доставка: +998 95 034 31 15   +998 93 229 88 96',
+        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value ?? localSaved.footer2 ?? '',
+        paperWidth: (settingsData?.find((s: any) => s.key === 'receipt_paper_width')?.value as ('58mm' | '80mm')) || localSaved.paperWidth || '80mm',
+        printerName: settingsData?.find((s: any) => s.key === 'receipt_printer_name')?.value ?? localSaved.printerName ?? '',
+        autoPrintOnPayment: settingsData ? settingsData.find((s: any) => s.key === 'receipt_autoprint')?.value === 'true' : localSaved.autoPrintOnPayment,
+        serviceChargePercent: Number(settingsData?.find((s: any) => s.key === 'receipt_service_percent')?.value) || localSaved.serviceChargePercent || 10
       };
 
       const state = get();
@@ -335,18 +402,38 @@ export const useStore = create<StoreState>((set, get) => ({
       }));
 
       const orders: Order[] = (ordersData || []).map(o => {
-        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => ({
-          id: oi.id,
-          menuItemId: oi.menu_item_id,
-          quantity: oi.quantity,
-          price: Number(oi.unit_price),
-          notes: oi.special_instructions || '',
-          kitchenStationId: oi.kitchen_station_id,
-          status: oi.status
-        }));
+        const items = (orderItemsData || []).filter(oi => oi.order_id === o.id && (oi.quantity > 0 || o.status === 'cancelled' || (oi.special_instructions || '').includes('OTMEN'))).map(oi => {
+          const menuItem = (menuItemsData || []).find(m => m.id === oi.menu_item_id);
+          const cat = (categoriesData || []).find(c => c.id === menuItem?.category_id);
+          return {
+            id: oi.id,
+            menuItemId: oi.menu_item_id,
+            name: menuItem?.name || oi.special_instructions || 'Taom',
+            categoryName: cat?.name || '',
+            quantity: oi.quantity,
+            price: Number(oi.unit_price),
+            notes: oi.special_instructions || '',
+            kitchenStationId: oi.kitchen_station_id || menuItem?.kitchen_station_id,
+            status: oi.status
+          };
+        });
         
         const payment = (paymentsData || []).find(p => p.order_id === o.id);
+        const resolvedMethod = payment ? (['bank_card', 'uzcard', 'humo'].includes(payment.payment_method) ? 'card' : payment.payment_method) : undefined;
         
+        let notesObj: any = null;
+        try {
+          if (o.notes && (o.notes.startsWith('{') || o.notes.startsWith('['))) {
+            notesObj = JSON.parse(o.notes);
+          }
+        } catch {
+          notesObj = null;
+        }
+
+        const cancelledAt = (o as any).cancelled_at || notesObj?.cancelled_at || (o.status === 'cancelled' ? o.updated_at : undefined);
+        const cancelledBy = (o as any).cancelled_by || notesObj?.cancelled_by || (o.status === 'cancelled' ? 'Admin' : undefined);
+        const cancellationReason = (o as any).cancellation_reason || notesObj?.cancellation_reason || (typeof o.notes === 'string' && !o.notes.startsWith('{') ? o.notes : (o.status === 'cancelled' ? "Sabab ko'rsatilmadi" : undefined));
+
         return {
           id: o.id,
           tableId: o.table_id || '',
@@ -354,7 +441,11 @@ export const useStore = create<StoreState>((set, get) => ({
           status: o.status,
           items,
           totalAmount: Number(o.total_amount),
-          paymentMethod: payment ? payment.payment_method : undefined,
+          paymentMethod: resolvedMethod,
+          cancelledAt,
+          cancelledBy,
+          cancellationReason,
+          notes: o.notes,
           createdAt: o.created_at,
           updatedAt: o.updated_at
         };
@@ -439,11 +530,15 @@ export const useStore = create<StoreState>((set, get) => ({
       }));
 
       const isSystemOpen = settingsData ? settingsData.find((s: any) => s.key === 'is_system_open')?.value !== 'false' : true;
-      const receiptSettings = {
-        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || 'Isfayram Kafe',
+      const receiptSettings: ReceiptSettings = {
+        title: settingsData?.find((s: any) => s.key === 'receipt_title')?.value || 'ISFAYRAM KAFE',
         address: settingsData?.find((s: any) => s.key === 'receipt_address')?.value || 'Quvasoy, UZ',
-        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || 'Доставка 95 034 31 15',
-        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value || 'Спасибо за визит!'
+        footer1: settingsData?.find((s: any) => s.key === 'receipt_footer_1')?.value || 'Доставка: +998 95 034 31 15   +998 93 229 88 96',
+        footer2: settingsData?.find((s: any) => s.key === 'receipt_footer_2')?.value || 'Спасибо за визит!',
+        paperWidth: (settingsData?.find((s: any) => s.key === 'receipt_paper_width')?.value as ('58mm' | '80mm')) || '80mm',
+        printerName: settingsData?.find((s: any) => s.key === 'receipt_printer_name')?.value || '',
+        autoPrintOnPayment: settingsData?.find((s: any) => s.key === 'receipt_autoprint')?.value === 'true',
+        serviceChargePercent: Number(settingsData?.find((s: any) => s.key === 'receipt_service_percent')?.value) || 10
       };
 
       set({ 
@@ -504,7 +599,16 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateMenuItemAvailability: async (id, isAvailable) => {
-    await supabase.from('menu_items').update({ is_available: isAvailable }).eq('id', id);
+    // Optimistic instant UI update
+    set(state => ({
+      menuItems: state.menuItems.map(item => item.id === id ? { ...item, isAvailable } : item)
+    }));
+    try {
+      const { error } = await supabase.from('menu_items').update({ is_available: isAvailable }).eq('id', id);
+      if (error) console.error('Failed to update menuItem availability:', error);
+    } catch (e) {
+      console.error('updateMenuItemAvailability error:', e);
+    }
     get().silentFetch();
   },
 
@@ -561,6 +665,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (orderError) {
       console.error('Error creating order:', orderError);
       alert('Buyurtma saqlashda xatolik: ' + orderError.message);
+      throw orderError;
     }
 
     if (orderResponse) {
@@ -606,8 +711,10 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       // Refresh state
-      get().silentFetch();
+      await get().silentFetch();
+      return orderResponse;
     }
+    return null;
   },
 
   addItemsToOrder: async (orderId, items, additionalAmount) => {
@@ -655,7 +762,8 @@ export const useStore = create<StoreState>((set, get) => ({
       }
     }
 
-    get().silentFetch();
+    await get().silentFetch();
+    return orderId;
   },
 
   updateOrderTable: async (orderId, newTableId) => {
@@ -681,28 +789,121 @@ export const useStore = create<StoreState>((set, get) => ({
     get().silentFetch();
   },
   
-  updateOrderStatus: async (id, status, paymentMethod) => {
-    const updateData: any = { status, updated_at: new Date().toISOString() };
+  cancelOrder: async (orderId: string, reason?: string, cancelledBy?: string) => {
+    const currentOrder = get().orders.find(o => o.id === orderId);
+    if (!currentOrder) return;
+
+    const now = new Date().toISOString();
+    const finalReason = reason?.trim() || "Sabab ko'rsatilmadi";
+    const userStr = localStorage.getItem('currentUser') || localStorage.getItem('adminUser');
+    const user = userStr ? JSON.parse(userStr) : null;
+    const finalCancelledBy = cancelledBy || user?.fullName || user?.name || 'Admin';
+
+    const notesPayload = JSON.stringify({
+      cancelled_at: now,
+      cancelled_by: finalCancelledBy,
+      cancellation_reason: finalReason
+    });
+
+    // 1. Revert table status to available immediately
+    if (currentOrder.tableId && currentOrder.tableId !== 'takeaway') {
+      await supabase.from('tables').update({ status: 'available' }).eq('id', currentOrder.tableId);
+    }
+
+    // 2. Try updating orders table with explicit columns + notes fallback
+    const { error: fullErr } = await supabase.from('orders').update({
+      status: 'cancelled',
+      updated_at: now,
+      cancelled_at: now,
+      cancelled_by: finalCancelledBy,
+      cancellation_reason: finalReason,
+      notes: notesPayload
+    } as any).eq('id', orderId);
+
+    if (fullErr) {
+      console.warn('[CANCEL] Updating with notes payload fallback:', fullErr.message);
+      await supabase.from('orders').update({
+        status: 'cancelled',
+        updated_at: now,
+        notes: notesPayload
+      }).eq('id', orderId);
+    }
+
+    // 3. Update local state
+    set(state => ({
+      orders: state.orders.map(o => o.id === orderId ? {
+        ...o,
+        status: 'cancelled',
+        cancelledAt: now,
+        cancelledBy: finalCancelledBy,
+        cancellationReason: finalReason,
+        notes: notesPayload,
+        updatedAt: now
+      } : o),
+      tables: currentOrder.tableId && currentOrder.tableId !== 'takeaway'
+        ? state.tables.map(t => t.id === currentOrder.tableId ? { ...t, status: 'available' } : t)
+        : state.tables
+    }));
+
+    get().silentFetch();
+  },
+
+  updateOrderStatus: async (id, status, paymentMethod, cancellationDetails) => {
+    const currentOrder = get().orders.find(o => o.id === id);
+    if (!currentOrder) return;
+
+    if (status === 'cancelled') {
+      await get().cancelOrder(id, cancellationDetails?.reason, cancellationDetails?.cancelledBy);
+      return;
+    }
+
+    // Strict guard: prevent paying a cancelled order
+    if (status === 'paid' && currentOrder.status === 'cancelled') {
+      console.warn('[PAYMENT GUARD] Cannot pay a cancelled order:', id);
+      alert("Bekor qilingan buyurtmaga to'lov qabul qilib bo'lmaydi!");
+      return;
+    }
+
+    // Strict guard: prevent duplicate payment records
+    if (status === 'paid' && currentOrder.status === 'paid') {
+      console.warn('[PAYMENT GUARD] Order already marked as paid. Ignoring duplicate payment request for order:', id);
+      return;
+    }
+
+    const finalAmount = status === 'paid'
+      ? (cancellationDetails?.finalTotal || (currentOrder.totalAmount + Math.round(currentOrder.totalAmount * 0.10)))
+      : currentOrder.totalAmount;
+
+    const updateData: any = { 
+      status, 
+      total_amount: finalAmount,
+      updated_at: new Date().toISOString() 
+    };
     
     // Update orders table
-    await supabase.from('orders').update(updateData).eq('id', id);
+    const { error: orderUpdateErr } = await supabase.from('orders').update(updateData).eq('id', id);
+    if (orderUpdateErr) {
+      console.error('[ORDER UPDATE ERROR]', orderUpdateErr);
+      alert("Buyurtma holatini yangilashda xatolik: " + orderUpdateErr.message);
+      return;
+    }
 
     // If paid, insert into payments table
     if (status === 'paid' && paymentMethod) {
-      const order = get().orders.find(o => o.id === id);
-      if (order) {
-        await supabase.from('payments').insert({
-          order_id: id,
-          amount: order.totalAmount,
-          payment_method: paymentMethod
-        });
+      const dbPaymentMethod = (paymentMethod === 'card' || paymentMethod === 'mixed') ? 'bank_card' : paymentMethod;
+      const { error: payErr } = await supabase.from('payments').insert({
+        order_id: id,
+        amount: finalAmount,
+        payment_method: dbPaymentMethod
+      });
+      if (payErr) {
+        console.error('[PAYMENT INSERT ERROR]', payErr);
       }
     }
 
-    if (status === 'cancelled' || status === 'paid') {
-      const order = get().orders.find(o => o.id === id);
-      if (order && order.tableId && order.tableId !== 'takeaway') {
-        await supabase.from('tables').update({ status: 'available' }).eq('id', order.tableId);
+    if (status === 'paid') {
+      if (currentOrder.tableId && currentOrder.tableId !== 'takeaway') {
+        await supabase.from('tables').update({ status: 'available' }).eq('id', currentOrder.tableId);
       }
     }
 
@@ -757,13 +958,27 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addEmployee: async (employee) => {
-    const { error } = await supabase.from('employees').insert({
+    let pinToUse = employee.pinCode;
+    let { error } = await supabase.from('employees').insert({
       full_name: employee.fullName,
       role: employee.role,
-      pin_code: employee.pinCode,
+      pin_code: pinToUse,
       is_active: employee.isActive,
       kitchen_station_ids: employee.kitchenStationIds || []
     });
+
+    if (error && (error.code === '23505' || error.message?.includes('pin_code'))) {
+      pinToUse = `${employee.pinCode}_${Date.now().toString(36)}`;
+      const retry = await supabase.from('employees').insert({
+        full_name: employee.fullName,
+        role: employee.role,
+        pin_code: pinToUse,
+        is_active: employee.isActive,
+        kitchen_station_ids: employee.kitchenStationIds || []
+      });
+      error = retry.error;
+    }
+
     if (!error) {
       get().silentFetch();
     } else {
@@ -773,13 +988,27 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateEmployee: async (employee) => {
-    const { error } = await supabase.from('employees').update({
+    let pinToUse = employee.pinCode;
+    let { error } = await supabase.from('employees').update({
       full_name: employee.fullName,
       role: employee.role,
-      pin_code: employee.pinCode,
+      pin_code: pinToUse,
       is_active: employee.isActive,
       kitchen_station_ids: employee.kitchenStationIds || []
     }).eq('id', employee.id);
+
+    if (error && (error.code === '23505' || error.message?.includes('pin_code'))) {
+      pinToUse = `${employee.pinCode}_${Date.now().toString(36)}`;
+      const retry = await supabase.from('employees').update({
+        full_name: employee.fullName,
+        role: employee.role,
+        pin_code: pinToUse,
+        is_active: employee.isActive,
+        kitchen_station_ids: employee.kitchenStationIds || []
+      }).eq('id', employee.id);
+      error = retry.error;
+    }
+
     if (!error) get().silentFetch();
     else console.error(error);
   },
@@ -842,19 +1071,43 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateReceiptSettings: async (settings) => {
-    const updates = [
-      { key: 'receipt_title', value: settings.title },
-      { key: 'receipt_address', value: settings.address },
-      { key: 'receipt_footer_1', value: settings.footer1 },
-      { key: 'receipt_footer_2', value: settings.footer2 }
-    ];
-    
-    // We update each key sequentially or use a bulk upsert
-    for (const update of updates) {
-      await supabase.from('settings').upsert({ key: update.key, value: update.value }, { onConflict: 'key' });
+    // 1. Immediately update Zustand store state and localStorage so settings are never lost
+    set({ receiptSettings: settings });
+    try {
+      localStorage.setItem('receiptSettings', JSON.stringify(settings));
+    } catch (e) {}
+
+    // 2. Sync to Electron desktop app if available
+    const api = (window as any).electronApi;
+    if (api?.isElectron && api.setPrinterConfig && api.getPrinterConfig) {
+      try {
+        const cur = (await api.getPrinterConfig()) || {};
+        cur['__paper_width__'] = settings.paperWidth || '80mm';
+        cur['__receipt_printer__'] = settings.printerName || '';
+        await api.setPrinterConfig(cur);
+      } catch (e) {
+        console.warn('[ELECTRON CONFIG] error:', e);
+      }
     }
-    
-    get().silentFetch();
+
+    // 3. Sync to Supabase settings table if accessible (non-blocking)
+    try {
+      const updates = [
+        { key: 'receipt_title', value: settings.title },
+        { key: 'receipt_address', value: settings.address },
+        { key: 'receipt_footer_1', value: settings.footer1 },
+        { key: 'receipt_footer_2', value: settings.footer2 || '' },
+        { key: 'receipt_paper_width', value: settings.paperWidth || '80mm' },
+        { key: 'receipt_printer_name', value: settings.printerName || '' },
+        { key: 'receipt_autoprint', value: String(!!settings.autoPrintOnPayment) }
+      ];
+      
+      for (const update of updates) {
+        await supabase.from('settings').upsert({ key: update.key, value: update.value }, { onConflict: 'key' });
+      }
+    } catch (err) {
+      console.warn('[SETTINGS] Supabase upsert error:', err);
+    }
   },
 
   addInventoryTransaction: async (tx) => {
@@ -938,6 +1191,31 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ theme });
   },
 
+  updateReceiptSettings: async (settings) => {
+    set({ receiptSettings: settings });
+    try {
+      localStorage.setItem('receiptSettings', JSON.stringify(settings));
+    } catch (e) {}
+
+    const updates = [
+      { key: 'receipt_title', value: settings.title },
+      { key: 'receipt_address', value: settings.address },
+      { key: 'receipt_footer_1', value: settings.footer1 },
+      { key: 'receipt_footer_2', value: settings.footer2 || '' },
+      { key: 'receipt_paper_width', value: settings.paperWidth || '80mm' },
+      { key: 'receipt_printer_name', value: settings.printerName || '' },
+      { key: 'receipt_autoprint', value: settings.autoPrintOnPayment ? 'true' : 'false' }
+    ];
+
+    try {
+      for (const item of updates) {
+        await supabase.from('settings').upsert({ key: item.key, value: item.value }, { onConflict: 'key' });
+      }
+    } catch (err) {
+      console.warn('Failed to sync receipt settings to Supabase:', err);
+    }
+  },
+
   deleteNotebookEntry: async (id: string) => {
     await supabase.from('notebook_entries').delete().eq('id', id);
     get().silentFetch();
@@ -968,12 +1246,38 @@ export const useStore = create<StoreState>((set, get) => ({
   updateOrderItemStatus: async (orderId: string, itemId: string, status: any) => {
     await supabase.from('order_items').update({ status }).eq('id', itemId);
     
-    // Check if we need to update order status if all items are delivered
-    const order = get().orders.find(o => o.id === orderId);
-    if (order) {
-      // Background logic if needed
+    // Check if entire order should transition to ready or preparing
+    const { data: allItems } = await supabase.from('order_items').select('status, quantity').eq('order_id', orderId).gt('quantity', 0);
+    if (allItems && allItems.length > 0) {
+      const allReady = allItems.every(i => i.status === 'ready' || i.status === 'delivered');
+      if (allReady) {
+        await supabase.from('orders').update({ status: 'ready', updated_at: new Date().toISOString() }).eq('id', orderId);
+      } else {
+        const anyActive = allItems.some(i => i.status === 'cooking' || i.status === 'accepted' || i.status === 'ready');
+        if (anyActive) {
+          const { data: curOrder } = await supabase.from('orders').select('status').eq('id', orderId).single();
+          if (curOrder && (curOrder.status === 'new' || curOrder.status === 'pending')) {
+            await supabase.from('orders').update({ status: 'preparing', updated_at: new Date().toISOString() }).eq('id', orderId);
+          }
+        }
+      }
     }
     
+    get().silentFetch();
+  },
+
+  markOrderItemsReady: async (orderId: string, itemIds: string[]) => {
+    if (!itemIds || itemIds.length === 0) return;
+    await supabase.from('order_items').update({ status: 'ready' }).in('id', itemIds);
+
+    const { data: allItems } = await supabase.from('order_items').select('status, quantity').eq('order_id', orderId).gt('quantity', 0);
+    if (allItems && allItems.length > 0) {
+      const allReady = allItems.every(i => i.status === 'ready' || i.status === 'delivered');
+      if (allReady) {
+        await supabase.from('orders').update({ status: 'ready', updated_at: new Date().toISOString() }).eq('id', orderId);
+      }
+    }
+
     get().silentFetch();
   }
 }));

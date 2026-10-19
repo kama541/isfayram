@@ -51,6 +51,8 @@ export interface Table {
 export interface OrderItem {
   id: string;
   menuItemId: string;
+  name?: string;
+  categoryName?: string;
   quantity: number;
   price: number; // price at the time of order
   notes?: string;
@@ -71,6 +73,10 @@ export interface Order {
   discountAmount?: number;
   customerPhone?: string;
   printCount?: number;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  cancellationReason?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -140,4 +146,15 @@ export interface NotebookEntry {
   status: 'unpaid' | 'paid';
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ReceiptSettings {
+  title: string;
+  address: string;
+  footer1: string;
+  footer2: string;
+  paperWidth?: '58mm' | '80mm';
+  printerName?: string;
+  autoPrintOnPayment?: boolean;
+  serviceChargePercent?: number;
 }

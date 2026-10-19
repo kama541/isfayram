@@ -59,8 +59,6 @@
   .border-blue-500, .focus\:border-blue-500:focus { border-color: #D4AF37 !important; }
   .shadow-blue-600\/20 { box-shadow: 0 4px 16px rgba(212,175,55,0.15) !important; }
 
-  /* Cards / Panels */
-  .rounded-2xl, .rounded-3xl { border-radius: inherit; }
 
   /* Input fields */
   input, select, textarea {
@@ -92,18 +90,26 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+  /* Touch scale active states */
+  .active\:scale-98:active { transform: scale(0.98); }
+  .active\:scale-95:active { transform: scale(0.95); }
+  .active\:scale-90:active { transform: scale(0.90); }
+
   /* Gold button style */
   .btn-gold {
     background: #D4AF37;
     color: #13120F;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-weight: 900;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-    box-shadow: 0 5px 20px rgba(212,175,55,0.2);
+    font-size: 0.9rem;
+    transition: all 0.15s;
+    box-shadow: 0 5px 20px rgba(212,175,55,0.25);
+    min-height: 48px;
+    border-radius: 1rem;
+    padding: 0 1.5rem;
   }
-  .btn-gold:hover { background: #c29f30; }
+  .btn-gold:hover { background: #c29f30; box-shadow: 0 6px 24px rgba(212,175,55,0.35); }
   .btn-gold:active { transform: scale(0.97); }
 
   /* Dark card */
@@ -111,6 +117,12 @@
     background: #1C1A17;
     border: 1px solid rgba(212,175,55,0.12);
     border-radius: 1.5rem;
+  }
+
+  /* POS Touch-friendly button minimum heights */
+  button {
+    min-height: 36px;
+    cursor: pointer;
   }
 }
 
@@ -132,20 +144,60 @@
   .print-container {
     background-color: #ffffff !important;
     position: absolute !important;
-    left: 0;
-    right: 0;
-    top: 0;
-    width: 80mm !important;
+    left: 0 !important;
+    top: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  html.dark .print-cashier-container,
+  body .print-cashier-container,
+  .print-cashier-container {
+    background-color: #ffffff !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: auto !important;
+    top: 0 !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 1.5mm 0 1.5mm !important;
+    width: 70mm !important;
+    max-width: 70mm !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  html.dark .print-kitchen-container,
+  body .print-kitchen-container,
+  .print-kitchen-container {
+    background-color: #ffffff !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
     margin: 0 auto !important;
-    padding: 0 4mm !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
   }
 
   html.dark .print-container, 
   body .print-container, 
   .print-container,
+  html.dark .print-cashier-container,
+  body .print-cashier-container,
+  .print-cashier-container,
+  html.dark .print-kitchen-container,
+  body .print-kitchen-container,
+  .print-kitchen-container,
   html.dark .print-container *, 
   body .print-container *, 
-  .print-container * {
+  .print-container *,
+  html.dark .print-cashier-container *,
+  body .print-cashier-container *,
+  .print-cashier-container *,
+  html.dark .print-kitchen-container *,
+  body .print-kitchen-container *,
+  .print-kitchen-container * {
     visibility: visible;
     color: #000000 !important;
   }
@@ -153,6 +205,5 @@
   @page { 
     margin: 0 !important; 
     padding: 0 !important;
-    size: 80mm auto; 
   }
 }

@@ -20,9 +20,27 @@ export const formatDate = (isoString: string): string => {
   });
 };
 
+export const formatTime = (isoString?: string): string => {
+  if (!isoString) return '';
+  return new Date(isoString).toLocaleTimeString('uz-UZ', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 export const formatOrderId = (id: string): string => {
-  if (!id) return '';
-  return parseInt(id.substring(0, 8), 16).toString().substring(0, 6);
+  if (!id) return 'A-060';
+  if (id.startsWith('TEST') || id.toLowerCase().includes('test')) return 'A-060';
+  const hex = id.replace(/[^0-9a-fA-F]/g, '');
+  if (hex.length >= 4) {
+    const num = parseInt(hex.substring(0, 6), 16);
+    if (!isNaN(num)) return 'A-' + String(num % 1000).padStart(3, '0');
+  }
+  const digits = id.replace(/\D/g, '');
+  if (digits.length > 0) {
+    return 'A-' + digits.slice(-3).padStart(3, '0');
+  }
+  return 'A-060';
 };
 
 export const formatTableName = (name: string | number | undefined | null): string => {

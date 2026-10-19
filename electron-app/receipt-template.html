@@ -5,26 +5,29 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 14px;
+      font-family: 'Consolas', 'Lucida Console', 'Courier New', Courier, monospace;
+      font-size: 13px;
       font-weight: bold;
       color: #000;
       background: #fff;
-      width: 76mm;
-      padding: 5px;
+      width: 64mm;
+      max-width: 64mm;
+      padding: 0;
       margin: 0 auto;
+      overflow: visible;
     }
     .logo-wrap {
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .logo-wrap img {
-      width: 180px;
-      height: 180px;
+      width: 80px;
+      height: 70px;
       object-fit: contain;
       display: block;
       margin: 0 auto;
-      filter: grayscale(100%) contrast(200%) brightness(1.1);
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
     .restaurant-name {
       text-align: center;
@@ -53,15 +56,18 @@
     .item .qty  { display: block; font-size: 24px; font-weight: 900; }
     .footer       { text-align: center; font-size: 12px; font-weight: bold; margin-top: 10px; letter-spacing: 1px; }
     .footer-thanks { text-align: center; font-size: 14px; margin-top: 4px; font-weight: 900; }
-    @media print { html, body { width: 76mm; } }
+    @media print { 
+      @page { size: 80mm auto; margin: 0; }
+      html, body { width: 64mm; overflow: visible; } 
+    }
   </style>
 </head>
 <body>
   <div class="logo-wrap">
     <img id="logo-img" src="" alt="Logo" style="display:none;" />
   </div>
-  <div class="restaurant-name">ISFAYRAM</div>
-  <div class="restaurant-sub">OSHXONA | RESTAURANT</div>
+  <div class="restaurant-name" style="font-size: 22px; font-weight: 900; letter-spacing: 2px;">ISFAYRAM</div>
+  <div class="restaurant-sub" style="font-size: 15px; font-weight: 900; letter-spacing: 1.5px; color: #000; margin-bottom: 5px;">QUVASOY, UZ</div>
   <div class="divider-solid"></div>
   <div class="info">
     <span class="label">XONA / STOL</span>
@@ -88,7 +94,14 @@
         img.src = data.logoBase64;
         img.style.display = 'block';
       }
-      document.getElementById('station-name').textContent = data.stationName || '';
+      const rawStation = data.stationName || '';
+      let cleanStation = rawStation.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+      cleanStation = cleanStation.replace(/\b[Rr]oom\b/gi, '').replace(/\b[Xx]ona(si)?\b/gi, '').trim();
+      if (/shashlik|mangal|kabob/i.test(cleanStation)) cleanStation = 'SHASHLIK';
+      else if (/fish|baliq/i.test(cleanStation)) cleanStation = 'BALIQ';
+      else if (/tandir|somsa/i.test(cleanStation)) cleanStation = 'TANDIR';
+      else if (/bar|ichimlik/i.test(cleanStation)) cleanStation = 'BAR';
+      document.getElementById('station-name').textContent = cleanStation.toUpperCase() || 'OSHXONA';
       document.getElementById('table-number').textContent = data.tableNumber || '';
       document.getElementById('waiter-name').textContent  = data.waiterName  || "Noma'lum";
       const now = new Date();
@@ -105,6 +118,7 @@
       });
     }
     window.onload = () => setTimeout(() => window.print(), 300);
-  </script>
+
+</script>
 </body>
 </html>

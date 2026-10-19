@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- 1.5. EMPLOYEES (Staff PIN Login without full Auth)
-CREATE TABLE public.employees (
+CREATE TABLE IF NOT EXISTS public.employees (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('admin', 'cashier', 'waiter', 'kitchen')),
-    pin_code TEXT NOT NULL UNIQUE,
+    pin_code TEXT NOT NULL,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

@@ -2,18 +2,17 @@ import { CheckCircle, Clock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { formatCurrency, formatOrderId, formatTableName, getDefaultTableSection } from '../../utils/format';
 import { TablesOverview } from '../../components/TablesOverview';
-import { ReceiptPrint } from '../../components/ReceiptPrint';
 import { NotebookModal } from '../../components/NotebookModal';
-import { TimeElapsed } from '../../components/TimeElapsed';
 import { PaymentModal } from '../../components/PaymentModal';
 import { OrderDetailsModal } from '../../components/OrderDetailsModal';
-import { Printer, BookOpen, Power, ListX, X, Check, Calculator, Banknote } from 'lucide-react';
+import { Printer, BookOpen, Power, ListX, X, Check, Calculator, Banknote, Plus, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { printReceiptElement } from '../../utils/printReceipt';
+import { triggerReceiptPrint } from '../../utils/printReceipt';
+import { StopListManagement } from './StopListManagement';
+
 export const CashierDashboard = () => {
   const { orders, tables, updateOrderStatus, isSystemOpen, setSystemOpen, menuItems, updateMenuItemAvailability } = useStore();
-  const [printingOrder, setPrintingOrder] = useState<any>(null);
   const [showNotebook, setShowNotebook] = useState(false);
   const [showStopList, setShowStopList] = useState(false);
   const [showShiftReport, setShowShiftReport] = useState(false);
@@ -31,32 +30,14 @@ export const CashierDashboard = () => {
   };
 
   const getTableNumber = (tableId: string) => {
-    if (!tableId) return 'S-oboy (Olib ketish)';
+    if (!tableId || tableId === 'takeaway') return 'S-oboy (Olib ketish)';
     const table = tables.find(t => t.id === tableId);
     return table ? formatTableName(table.number) : 'Noma\'lum';
   };
 
   const handlePrint = (order: any) => {
-    // Prevent duplicate prints (debounce)
-    if ((window as any).__isPrinting) return;
-    (window as any).__isPrinting = true;
-    setTimeout(() => { (window as any).__isPrinting = false; }, 3000);
-
-    // Track print count
-    const printedOrders = JSON.parse(localStorage.getItem('printedOrders') || '{}');
-    const newCount = (printedOrders[order.id] || 0) + 1;
-    printedOrders[order.id] = newCount;
-    localStorage.setItem('printedOrders', JSON.stringify(printedOrders));
-    
-    setPrintingOrder({ ...order, printCount: newCount });
-    setTimeout(() => {
-      printReceiptElement(order.id).finally(() => {
-        setTimeout(() => setPrintingOrder(null), 1000);
-      });
-    }, 150);
+    triggerReceiptPrint(order);
   };
-
-  // Remote print triggers (from waiters' phones) are handled globally by RemotePrintListener
 
   const getPrintedCount = (orderId: string) => {
     const printedOrders = JSON.parse(localStorage.getItem('printedOrders') || '{}');
@@ -84,7 +65,7 @@ export const CashierDashboard = () => {
   // 3. To'langan (Bugungi smena)
   const paidToday = orders.filter(o => o.status === 'paid' && getLogicalDate(o.updatedAt || o.createdAt) === todayLogicalDate);
   
-  // 4. Bekor qilingan (Otmen bo'lganlar - butunlay bekor qilingan yoki ichida otmen qilingan taom borlar)
+  // 4. Bekor qilingan (Otmen bo'lganlar)
   const cancelledOrders = orders.filter(o => 
     (o.status === 'cancelled' || (o.items && o.items.some((i: any) => i.quantity === 0))) &&
     getLogicalDate(o.updatedAt || o.createdAt) === todayLogicalDate
@@ -95,23 +76,30 @@ export const CashierDashboard = () => {
   const totalRevenue = cashTotal + cardTotal;
 
   return (
-    <div className="p-8 space-y-8">
-      <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
+    <div className="p-4 sm:p-8 space-y-8 select-none">
+      {/* Top Header */}
+      <div className="flex justify-between items-start lg:items-center flex-col lg:flex-row gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Kassir Dashboard</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">To'lovlarni qabul qilish va nazorat qilish</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase" style={{ color: '#D4AF37' }}>
+            Kassa Paneli
+          </h1>
+          <p className="text-sm sm:text-base font-semibold mt-1" style={{ color: '#A39B8B' }}>
+            Buyurtmalar nazorati va to'lovlarni qabul qilish
+          </p>
         </div>
-        <div className="flex gap-3">
+
+        {/* Quick Action Buttons */}
+        <div className="flex gap-2.5 flex-wrap items-center">
           <button
             onClick={() => {
-              (window as any).customConfirm(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi (mijozlar menyuni ko'ra oladi). Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?", () => {
+              (window as any).customConfirm?.(isSystemOpen ? "Diqqat! Saytni yopsangiz, ofitsiantlar va kassirlar kira olmaydi. Tasdiqlaysizmi?" : "Saytni qayta ochishni tasdiqlaysizmi?", () => {
                 setSystemOpen(!isSystemOpen);
-              });
+              }) || setSystemOpen(!isSystemOpen);
             }}
-            className={`px-5 py-2.5 rounded-xl font-bold transition-colors flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-2xl font-black text-sm sm:text-base transition-all active:scale-95 flex items-center gap-2 shadow-sm ${
               isSystemOpen 
-                ? 'bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50' 
-                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50'
+                ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/30' 
+                : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
             }`}
           >
             <Power className="w-5 h-5" />
@@ -120,15 +108,24 @@ export const CashierDashboard = () => {
           
           <button 
             onClick={() => setShowNotebook(true)}
-            className="bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 px-5 py-2.5 rounded-xl font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-2"
+            className="px-5 py-3 rounded-2xl font-black text-sm sm:text-base transition-all active:scale-95 flex items-center gap-2 shadow-sm bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 border border-indigo-500/30"
           >
             <BookOpen className="w-5 h-5" />
             Daftarcha
           </button>
           
+          <Link 
+            to="/cashier/menu"
+            className="px-5 py-3 rounded-2xl font-black text-sm sm:text-base transition-all active:scale-95 flex items-center gap-2 shadow-sm bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30"
+            title="Taomlar va narxlarni boshqarish"
+          >
+            <BookOpen className="w-5 h-5" />
+            Menyu
+          </Link>
+
           <button 
             onClick={() => setShowStopList(true)}
-            className="bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-5 py-2.5 rounded-xl font-bold hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors flex items-center gap-2"
+            className="px-5 py-3 rounded-2xl font-black text-sm sm:text-base transition-all active:scale-95 flex items-center gap-2 shadow-sm bg-orange-500/15 text-orange-300 hover:bg-orange-500/25 border border-orange-500/30"
           >
             <ListX className="w-5 h-5" />
             Stop-list
@@ -136,7 +133,7 @@ export const CashierDashboard = () => {
           
           <button 
             onClick={() => setShowShiftReport(true)}
-            className="bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 px-5 py-2.5 rounded-xl font-bold hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors flex items-center gap-2"
+            className="px-5 py-3 rounded-2xl font-black text-sm sm:text-base transition-all active:scale-95 flex items-center gap-2 shadow-sm bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30"
           >
             <Calculator className="w-5 h-5" />
             Z-otchyot
@@ -144,22 +141,25 @@ export const CashierDashboard = () => {
 
           <Link 
             to="/cashier/new-order?table=takeaway"
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
+            className="px-6 py-3 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2 shadow-xl"
+            style={{ background: '#D4AF37', color: '#13120F', boxShadow: '0 4px 20px rgba(212,175,55,0.25)' }}
           >
-            + S-oboy (Olib ketish)
+            <Plus className="w-5 h-5" />
+            S-oboy
           </Link>
         </div>
       </div>
       
-      <div className="flex gap-2 flex-wrap mb-2">
+      {/* Section Filter Pills */}
+      <div className="flex gap-2 flex-wrap">
         {SECTIONS.map(sec => (
           <button
             key={sec}
             onClick={() => setActiveSection(sec)}
-            className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-colors ${
+            className={`px-5 py-2.5 rounded-2xl text-sm sm:text-base font-black transition-all active:scale-95 shadow-sm ${
               activeSection === sec
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                ? 'bg-[#D4AF37] text-[#13120F]'
+                : 'bg-[#1C1A17] text-[#A39B8B] hover:text-[#F5F2EA] hover:bg-[#24211D] border border-[rgba(212,175,55,0.12)]'
             }`}
           >
             {sec}
@@ -167,198 +167,351 @@ export const CashierDashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      {/* 4 JOWi-Style Order Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+        
         {/* 1. Ochiq buyurtmalar (Otkrytye) */}
         <div className="space-y-4">
-          <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-blue-500" /> Ochiqlar (Zakaz berildi) {openOrders.length}
-          </h2>
-          {openOrders.map(order => {
-            const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
-            return (
-              <div key={order.id} className="bg-[#2979ff] hover:bg-[#226add] transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
-                <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
-                </div>
-                <div className="flex flex-col gap-1.5 mt-2">
-                  {order.items.map((i: any, index: number) => {
-                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
-                    return (
-                      <div key={index} className={`flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
-                        <span className="truncate pr-2">{itemName || 'Taom'}</span>
-                        <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                    {getTableNumber(order.tableId)}
-                  </div>
-                  <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})} 
-                  </div>
-                </div>
-                {/* Hover actions */}
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                  <button onClick={(e) => { e.stopPropagation(); setPaymentOrder(order); }} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
-                    <Banknote className="w-5 h-5" /> To'lov qilish
-                  </button>
-                  <div className="flex gap-2 w-full mt-1">
-                    <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Chek</button>
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Ko'rish</button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-400" /> Ochiqlar ({openOrders.length})
+            </h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300">
+              Chek berilmagan
+            </span>
+          </div>
 
-        {/* 2. Yopilgan (Zakritiy) - Precheck printed */}
-        <div className="space-y-4">
-          <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <Printer className="w-5 h-5 text-amber-500" /> Yopilgan (Zakritiy) {closedOrders.length}
-          </h2>
-          {closedOrders.map(order => {
-            const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
-            return (
-              <div key={order.id} className="bg-amber-500 hover:bg-amber-600 transition-colors text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
-                <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
-                </div>
-                <div className="flex flex-col gap-1.5 mt-2">
-                  {order.items.map((i: any, index: number) => {
-                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
-                    return (
-                      <div key={index} className={`flex justify-between items-center bg-white/20 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
-                        <span className="truncate pr-2">{itemName || 'Taom'}</span>
-                        <span className="font-bold shrink-0">{i.quantity} x</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="bg-black/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                    {getTableNumber(order.tableId)}
-                  </div>
-                  <div className="bg-black/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(order.createdAt).toLocaleTimeString('uz-UZ', {hour: '2-digit', minute:'2-digit'})} 
-                  </div>
-                </div>
-                {/* Hover actions */}
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                  <button onClick={(e) => { e.stopPropagation(); setPaymentOrder(order); }} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center gap-2">
-                    <Banknote className="w-5 h-5" /> To'lov qilish
-                  </button>
-                  <div className="flex gap-2 w-full mt-1">
-                    <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Qayta Chek</button>
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="flex-1 bg-white/20 text-white py-2 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">Ko'rish</button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 3. To'langan (Oplachennye) */}
-        <div className="space-y-4">
-          <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <CheckCircle className="w-5 h-5 text-emerald-500" /> To'langan {paidToday.length}
-          </h2>
-          <div className="grid grid-cols-1 gap-4">
-            {paidToday.map(order => {
+          <div className="space-y-4">
+            {openOrders.map(order => {
               const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
               return (
-                <div key={order.id} className="bg-[#2e7d32] text-white p-5 rounded-3xl shadow-sm flex flex-col gap-3 group relative cursor-pointer" onClick={() => setSelectedOrderDetails(order)}>
-                  <div className="flex justify-between items-center text-sm font-semibold opacity-90 tracking-wide">
-                    <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'}</span>
+                <div 
+                  key={order.id} 
+                  className="bg-[#1e40af] hover:bg-[#1d4ed8] transition-all text-white p-5 rounded-3xl shadow-xl flex flex-col gap-3 relative border-2 border-blue-400/30"
+                >
+                  {/* Card Header */}
+                  <div className="flex justify-between items-center text-sm font-extrabold tracking-wide border-b border-white/10 pb-2">
+                    <span className="text-base font-black">№{formatOrderId(order.id)}</span>
+                    <span className="text-xs uppercase bg-black/25 px-2.5 py-1 rounded-lg">
+                      {waiter ? waiter.fullName : 'KASSIR'}
+                    </span>
                   </div>
-                  <div className="flex flex-col gap-1.5 mt-2">
+
+                  {/* Items List */}
+                  <div className="flex flex-col gap-1.5 my-1 max-h-48 overflow-y-auto pr-1 scrollbar-hide">
                     {order.items.map((i: any, index: number) => {
                       const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
                       return (
-                        <div key={index} className={`flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-lg text-sm font-medium ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
+                        <div key={index} className={`flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-xl text-sm font-bold ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
                           <span className="truncate pr-2">{itemName || 'Taom'}</span>
-                          <span className="font-bold opacity-80 shrink-0">{i.quantity} x</span>
+                          <span className="font-black shrink-0">{i.quantity} x</span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="bg-white/20 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 text-amber-200">
-                      {getTableNumber(order.tableId)}
+
+                  {/* Metadata & Total */}
+                  <div className="flex justify-between items-center pt-1 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-black/30 px-3 py-1 rounded-xl text-xs sm:text-sm font-black">
+                        {getTableNumber(order.tableId)}
+                      </span>
+                      <span className="text-xs opacity-80 flex items-center gap-1 font-semibold">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(order.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base sm:text-lg font-black text-amber-300">
+                        {Math.round((order.totalAmount || 0) * 1.1).toLocaleString('uz-UZ')} so'm
+                      </div>
+                      <div className="text-[10px] text-amber-300/60 font-semibold">+10% servis bilan</div>
                     </div>
                   </div>
-                  {/* Hover actions */}
-                  <div className="absolute inset-0 bg-[#1b5e20]/90 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 gap-2">
-                    <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
-                      <Printer className="w-5 h-5" /> Chek chiqarish
+
+                  {/* Touch Action Buttons */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button 
+                      onClick={() => setPaymentOrder(order)} 
+                      className="w-full bg-[#10b981] hover:bg-[#059669] text-white py-3 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-md active:scale-98"
+                    >
+                      <Banknote className="w-5 h-5" /> To'lov qilish
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
-                      Ko'rish
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handlePrint(order)} 
+                        className="flex-1 bg-amber-500 hover:bg-amber-400 text-white py-3.5 rounded-xl text-base font-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-amber-500/30"
+                      >
+                        <Printer className="w-5 h-5" /> Chek
+                      </button>
+                      <button 
+                        onClick={() => setSelectedOrderDetails(order)} 
+                        className="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                      >
+                        <Eye className="w-4 h-4" /> Ko'rish
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {openOrders.length === 0 && (
+              <div className="text-center py-10 font-bold text-sm" style={{ color: '#6C6659' }}>
+                Ochiq buyurtmalar yo'q
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 2. Yopilgan (Zakritiy) - Precheck printed */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-amber-500/20">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <Printer className="w-5 h-5 text-amber-400" /> Yopilgan ({closedOrders.length})
+            </h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300">
+              Hisob berilgan
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {closedOrders.map(order => {
+              const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
+              return (
+                <div 
+                  key={order.id} 
+                  className="bg-[#b45309] hover:bg-[#92400e] transition-all text-white p-5 rounded-3xl shadow-xl flex flex-col gap-3 relative border-2 border-amber-300/40 ring-1 ring-amber-400/30"
+                >
+                  <div className="flex justify-between items-center text-sm font-extrabold tracking-wide border-b border-white/10 pb-2">
+                    <span className="text-base font-black">№{formatOrderId(order.id)}</span>
+                    <span className="text-xs uppercase bg-black/25 px-2.5 py-1 rounded-lg">
+                      {waiter ? waiter.fullName : 'KASSIR'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 my-1 max-h-48 overflow-y-auto pr-1 scrollbar-hide">
+                    {order.items.map((i: any, index: number) => {
+                      const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                      return (
+                        <div key={index} className={`flex justify-between items-center bg-black/20 px-3 py-1.5 rounded-xl text-sm font-bold ${i.quantity === 0 ? 'line-through opacity-50' : ''}`}>
+                          <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                          <span className="font-black shrink-0">{i.quantity} x</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1 border-t border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-black/30 px-3 py-1 rounded-xl text-xs sm:text-sm font-black">
+                        {getTableNumber(order.tableId)}
+                      </span>
+                      <span className="text-xs opacity-80 flex items-center gap-1 font-semibold">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(order.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base sm:text-lg font-black text-amber-200">
+                        {Math.round((order.totalAmount || 0) * 1.1).toLocaleString('uz-UZ')} so'm
+                      </div>
+                      <div className="text-[10px] text-amber-200/60 font-semibold">+10% servis bilan</div>
+                    </div>
+                  </div>
+
+                  {/* Touch Action Buttons */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button 
+                      onClick={() => setPaymentOrder(order)} 
+                      className="w-full bg-[#10b981] hover:bg-[#059669] text-white py-3 rounded-2xl text-base font-black transition-all flex items-center justify-center gap-2 shadow-md active:scale-98"
+                    >
+                      <Banknote className="w-5 h-5" /> To'lov qilish
+                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handlePrint(order)} 
+                        className="flex-1 bg-amber-500 hover:bg-amber-400 text-white py-3.5 rounded-xl text-base font-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-amber-500/30"
+                      >
+                        <Printer className="w-5 h-5" /> Qayta Chek
+                      </button>
+                      <button 
+                        onClick={() => setSelectedOrderDetails(order)} 
+                        className="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                      >
+                        <Eye className="w-4 h-4" /> Ko'rish
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {closedOrders.length === 0 && (
+              <div className="text-center py-10 font-bold text-sm" style={{ color: '#6C6659' }}>
+                Yopilgan buyurtmalar yo'q
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 3. To'langan (Oplachennye) */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-emerald-500/20">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-emerald-400" /> To'langan ({paidToday.length})
+            </h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">
+              Bugun
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {paidToday.map(order => {
+              const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
+              return (
+                <div 
+                  key={order.id} 
+                  className="bg-[#065f46] hover:bg-[#047857] text-white p-5 rounded-3xl shadow-md flex flex-col gap-3 relative border-2 border-emerald-400/30 transition-all"
+                >
+                  <div className="flex justify-between items-center text-sm font-extrabold tracking-wide border-b border-white/10 pb-2">
+                    <span className="text-base font-black">№{formatOrderId(order.id)}</span>
+                    <span className="text-xs uppercase bg-black/25 px-2.5 py-1 rounded-lg">
+                      {waiter ? waiter.fullName : 'KASSIR'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 my-1 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
+                    {order.items.map((i: any, index: number) => {
+                      const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                      return (
+                        <div key={index} className="flex justify-between items-center bg-white/10 px-3 py-1.5 rounded-xl text-sm font-bold">
+                          <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                          <span className="font-black shrink-0">{i.quantity} x</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1 border-t border-white/10">
+                    <span className="bg-black/30 px-3 py-1 rounded-xl text-xs sm:text-sm font-black">
+                      {getTableNumber(order.tableId)}
+                    </span>
+                    <div className="text-right">
+                      <div className="text-base sm:text-lg font-black text-emerald-200">
+                        {Math.round((order.totalAmount || 0) * 1.1).toLocaleString('uz-UZ')} so'm
+                      </div>
+                      <div className="text-[10px] text-emerald-200/60 font-semibold">+10% servis bilan</div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button 
+                      onClick={() => handlePrint(order)} 
+                      className="flex-1 bg-amber-500 hover:bg-amber-400 text-white py-3.5 rounded-xl text-base font-black transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-amber-500/30"
+                    >
+                      <Printer className="w-5 h-5" /> Chek
+                    </button>
+                    <button 
+                      onClick={() => setSelectedOrderDetails(order)} 
+                      className="flex-1 bg-white/20 hover:bg-white/30 text-white py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <Eye className="w-4 h-4" /> Ko'rish
                     </button>
                   </div>
                 </div>
               );
             })}
+            {paidToday.length === 0 && (
+              <div className="text-center py-10 font-bold text-sm" style={{ color: '#6C6659' }}>
+                Hali to'langan buyurtmalar yo'q
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 4. Bekor qilingan (Otmen qilinganlar / Otmen qilingan taomi borlar) */}
+        {/* 4. Bekor qilingan (Otmen) */}
         <div className="space-y-4">
-          <h2 className="text-[15px] font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-            <X className="w-5 h-5 text-red-500" /> Otmen {cancelledOrders.length}
-          </h2>
-          {cancelledOrders.map(order => {
-            const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
-            const isFullyCancelled = order.status === 'cancelled';
-            return (
-              <div key={order.id} className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 p-5 rounded-3xl shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors relative group" onClick={() => setSelectedOrderDetails(order)}>
-                <div className="flex justify-between items-center text-sm font-semibold opacity-70 tracking-wide">
-                  <span>№{formatOrderId(order.id)} • {waiter ? waiter.fullName.toUpperCase() : 'KASSIR'} {isFullyCancelled ? '(To\'liq otmen)' : '(Qisman otmen)'}</span>
-                </div>
-                <div className="flex flex-col gap-1.5 mt-2">
-                  {order.items.map((i: any, index: number) => {
-                    const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
-                    const isCancelledItem = i.quantity === 0;
-                    return (
-                      <div key={index} className={`flex justify-between items-center px-3 py-1.5 rounded-lg text-sm font-medium opacity-80 ${isCancelledItem ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-300 dark:bg-slate-600'}`}>
-                        <span className={`truncate pr-2 ${isCancelledItem ? 'line-through' : ''}`}>{itemName || 'Taom'}</span>
-                        <span className="font-bold shrink-0">{i.quantity} x</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="bg-slate-300 dark:bg-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5">
-                    {getTableNumber(order.tableId)}
+          <div className="flex items-center justify-between pb-2 border-b border-red-500/20">
+            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+              <X className="w-5 h-5 text-red-500" /> Otmen ({cancelledOrders.length})
+            </h2>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-red-500/20 text-red-300">
+              Bekor qilingan
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {cancelledOrders.map(order => {
+              const waiter = useStore.getState().employees.find(e => e.id === order.waiterId);
+              const isFullyCancelled = order.status === 'cancelled';
+              return (
+                <div 
+                  key={order.id} 
+                  className="bg-[#24211D] text-[#A39B8B] p-5 rounded-3xl shadow-sm flex flex-col gap-3 relative border border-red-500/25"
+                >
+                  <div className="flex justify-between items-center text-sm font-extrabold tracking-wide border-b border-white/5 pb-2 text-white">
+                    <span className="text-base font-black">№{formatOrderId(order.id)}</span>
+                    <span className="text-xs uppercase bg-red-500/20 text-red-300 px-2 py-0.5 rounded-lg">
+                      {isFullyCancelled ? 'To\'liq otmen' : 'Qisman otmen'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 my-1 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
+                    {order.items.map((i: any, index: number) => {
+                      const itemName = menuItems.find(m => m.id === i.menuItemId)?.name;
+                      const isCancelledItem = i.quantity === 0;
+                      return (
+                        <div key={index} className={`flex justify-between items-center px-3 py-1.5 rounded-xl text-sm font-bold ${isCancelledItem ? 'bg-red-950/40 text-red-400 line-through' : 'bg-white/5 text-white/80'}`}>
+                          <span className="truncate pr-2">{itemName || 'Taom'}</span>
+                          <span className="font-black shrink-0">{i.quantity} x</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1 border-t border-white/5">
+                    <span className="bg-white/5 text-white px-3 py-1 rounded-xl text-xs sm:text-sm font-bold">
+                      {getTableNumber(order.tableId)}
+                    </span>
+                    <span className="text-xs font-semibold text-white/60">
+                      {waiter ? waiter.fullName : 'Kassir'}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button 
+                      onClick={() => handlePrint(order)} 
+                      className="flex-1 bg-white/10 hover:bg-white/15 text-white py-2 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <Printer className="w-4 h-4" /> Chek
+                    </button>
+                    <button 
+                      onClick={() => setSelectedOrderDetails(order)} 
+                      className="flex-1 bg-white/10 hover:bg-white/15 text-white py-2 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                    >
+                      <Eye className="w-4 h-4" /> Ko'rish
+                    </button>
                   </div>
                 </div>
-                {/* Hover for reprint */}
-                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
-                  <button onClick={(e) => { e.stopPropagation(); handlePrint(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-[15px] font-bold hover:bg-white/30 transition-colors flex items-center justify-center gap-2">
-                    <Printer className="w-5 h-5" /> Chekni qayta chiqarish
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); setSelectedOrderDetails(order); }} className="w-full bg-white/20 text-white py-3 rounded-xl text-sm font-bold hover:bg-white/30 transition-colors">
-                    Ko'rish
-                  </button>
-                </div>
+              );
+            })}
+            {cancelledOrders.length === 0 && (
+              <div className="text-center py-10 font-bold text-sm" style={{ color: '#6C6659' }}>
+                Bekor qilingan buyurtmalar yo'q
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
       </div>
       
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+      {/* Table Map Section */}
+      <div className="rounded-3xl p-6 sm:p-8 shadow-xl" style={{ background: '#1C1A17', border: '1px solid rgba(212,175,55,0.15)' }}>
+        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight mb-6" style={{ color: '#D4AF37' }}>
+          Stollar Xaritasi (Zal Ko'rinishi)
+        </h2>
         <TablesOverview />
       </div>
 
-      <div className="print-container">
-        <ReceiptPrint order={printingOrder} />
-      </div>
-
+      {/* Modals */}
       {selectedOrderDetails && (
         <OrderDetailsModal 
           order={selectedOrderDetails} 
@@ -370,82 +523,45 @@ export const CashierDashboard = () => {
       {showNotebook && <NotebookModal onClose={() => setShowNotebook(false)} />}
       
       {showStopList && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <ListX className="w-6 h-6 text-orange-500" />
-                Stop-list & Go-list
-              </h2>
-              <button 
-                onClick={() => setShowStopList(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 rounded-xl"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="space-y-3">
-                {menuItems.map(item => (
-                  <div key={item.id} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                    <div>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200">{item.name}</h3>
-                      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{formatCurrency(item.price)}</p>
-                    </div>
-                    <button
-                      onClick={() => updateMenuItemAvailability(item.id, !item.isAvailable)}
-                      className={`px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors ${
-                        item.isAvailable 
-                          ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                          : 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400'
-                      }`}
-                    >
-                      {item.isAvailable ? (
-                        <><Check className="w-4 h-4" /> Go (Bor)</>
-                      ) : (
-                        <><X className="w-4 h-4" /> Stop (Tugagan)</>
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6">
+          <div className="bg-[#1C1A17] rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden border border-[rgba(212,175,55,0.25)] p-4 sm:p-6">
+            <StopListManagement isModal={true} onClose={() => setShowStopList(false)} />
           </div>
         </div>
       )}
 
       {showShiftReport && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900">
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <Calculator className="w-6 h-6 text-purple-500" />
-                Smena Hisoboti
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1C1A17] rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-[rgba(212,175,55,0.2)]">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#24211D]">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Calculator className="w-6 h-6 text-purple-400" />
+                Smena Hisoboti (Z-Otchyot)
               </h2>
               <button 
                 onClick={() => setShowShiftReport(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-white dark:bg-slate-800 rounded-xl"
+                className="p-2 text-white/60 hover:text-white transition-colors bg-white/5 rounded-2xl"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Naqd pul orqali:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">{formatCurrency(cashTotal)}</span>
+            <div className="p-6 space-y-5">
+              <div className="space-y-4 bg-white/5 p-5 rounded-2xl border border-white/5">
+                <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                  <span className="text-white/70 font-bold text-sm">Naqd pul tushumi:</span>
+                  <span className="font-black text-emerald-400 text-lg">{formatCurrency(cashTotal)}</span>
                 </div>
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Plastik karta orqali:</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{formatCurrency(cardTotal)}</span>
+                <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                  <span className="text-white/70 font-bold text-sm">Plastik karta tushumi:</span>
+                  <span className="font-black text-blue-400 text-lg">{formatCurrency(cardTotal)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-slate-800 dark:text-slate-200 font-bold text-lg">Jami tushum:</span>
-                  <span className="font-bold text-purple-600 dark:text-purple-400 text-2xl">{formatCurrency(totalRevenue)}</span>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-white font-extrabold text-base">Jami tushum:</span>
+                  <span className="font-black text-[#D4AF37] text-2xl">{formatCurrency(totalRevenue)}</span>
                 </div>
               </div>
+
               <button
                 onClick={() => {
                   const electronApi = (window as any).electronApi;
@@ -455,9 +571,10 @@ export const CashierDashboard = () => {
                     window.print();
                   }
                 }}
-                className="w-full mt-8 bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-wider text-[#13120F] transition-all flex items-center justify-center gap-2 shadow-xl active:scale-98"
+                style={{ background: '#D4AF37' }}
               >
-                <Printer className="w-5 h-5" /> Chop etish
+                <Printer className="w-5 h-5" /> Hisobotni Chop Etish
               </button>
             </div>
           </div>
@@ -468,10 +585,9 @@ export const CashierDashboard = () => {
         <PaymentModal
           order={paymentOrder}
           onClose={() => setPaymentOrder(null)}
-          onPay={async (orderId, method) => {
-            await updateOrderStatus(orderId, 'paid', method);
-            const ord = orders.find(o => o.id === orderId);
-            if (ord) handlePrint({ ...ord, status: 'paid', paymentMethod: method });
+          onPay={async (orderId, method, paymentData) => {
+            await updateOrderStatus(orderId, 'paid', method, paymentData);
+            setPaymentOrder(null);
           }}
         />
       )}

@@ -10,8 +10,8 @@ export const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
 
@@ -23,17 +23,16 @@ export const AdminLogin = () => {
         emp.pinCode === cleanPass
       );
 
-      // 1. Master passwords and Admin employee PIN codes
+      const normalizedPass = cleanPass.replace(/\s+/g, '');
+      // Strictly require 181992 for admin access
       if (
-        cleanPass === '111111' || 
-        cleanPass === 'admin' || 
-        cleanPass === '+998916769198' || 
-        cleanPass === '916769198' || 
-        adminEmployee
+        cleanPass === '181992' ||
+        normalizedPass === '181992' ||
+        cleanPass === '18 19 92'
       ) {
-        const adminData = { role: 'admin', email: adminEmployee ? adminEmployee.fullName : 'admin' };
+        const adminData = { role: 'admin', email: 'admin@isfayram.uz' };
         localStorage.setItem('adminUser', JSON.stringify(adminData));
-        localStorage.setItem('currentUser', JSON.stringify({ role: 'admin', fullName: adminEmployee ? adminEmployee.fullName : 'Administrator' }));
+        localStorage.setItem('currentUser', JSON.stringify({ role: 'admin', fullName: 'Administrator' }));
         navigate('/admin');
         return;
       }
@@ -81,46 +80,50 @@ export const AdminLogin = () => {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <div className="space-y-6" onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}>
           <div>
-            <label className="block text-sm font-medium mb-2 ml-1 tracking-wider uppercase" style={{ color: '#8A8070' }}>Maxfiy Parol</label>
+            <label className="block text-sm font-bold mb-2.5 ml-1 tracking-wider uppercase" style={{ color: '#8A8070' }}>Maxfiy Parol</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: '#6C6659' }}>
-                <Lock className="w-5 h-5" />
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none" style={{ color: '#D4AF37' }}>
+                <Lock className="w-6 h-6" />
               </div>
               <input
-                type="password"
+                type="text"
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all"
+                className="w-full pl-13 pr-4 py-4 rounded-2xl text-lg outline-none transition-all font-mono font-bold"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(212,175,55,0.2)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(212,175,55,0.3)',
                   color: '#F5F2EA',
-                }}
+                  WebkitTextSecurity: 'disc',
+                } as any}
                 placeholder="••••••••"
-                required
               />
             </div>
           </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleLogin()}
             disabled={loading}
-            className="w-full py-3.5 font-bold rounded-xl flex items-center justify-center gap-2 mt-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
-            style={{ background: '#D4AF37', color: '#13120F', boxShadow: '0 5px 30px rgba(212,175,55,0.2)' }}
+            className="w-full py-4 font-black rounded-2xl flex items-center justify-center gap-2 mt-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-base cursor-pointer shadow-lg"
+            style={{ background: '#D4AF37', color: '#13120F', boxShadow: '0 8px 30px rgba(212,175,55,0.25)' }}
           >
             {loading ? 'Tekshirilmoqda...' : 'Tizimga kirish'}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-5 h-5" />
           </button>
-        </form>
+        </div>
 
         <button
           onClick={() => navigate('/login')}
-          className="w-full mt-5 py-3 flex items-center justify-center gap-2 text-sm transition-colors hover:opacity-80"
-          style={{ color: '#6C6659' }}
+          className="w-full mt-6 py-3 flex items-center justify-center gap-2 text-base font-medium transition-colors hover:opacity-80 cursor-pointer"
+          style={{ color: '#8A8070' }}
         >
-          <UtensilsCrossed className="w-4 h-4" />
+          <UtensilsCrossed className="w-5 h-5" />
           Kassa va Ofitsiant bo'limiga qaytish
         </button>
       </div>

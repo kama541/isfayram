@@ -15,7 +15,7 @@ interface CartItem {
 
 export const CustomerMenu = () => {
   const { tableId } = useParams();
-  const { menuItems, categories, orders, createOrder, addItemsToOrder, createWaiterCall, isLoading } = useStore();
+  const { menuItems, categories, tables, orders, createOrder, addItemsToOrder, createWaiterCall, isLoading } = useStore();
   
   const [appState, setAppState] = useState<'welcome' | 'menu' | 'cart' | 'status'>('welcome');
   const [activeCategory, setActiveCategory] = useState('popular');
@@ -27,8 +27,20 @@ export const CustomerMenu = () => {
   
   const [justAdded, setJustAdded] = useState(false);
 
+  // Resolved table
+  const matchedTable = tables.find(t => 
+    t.id === tableId || 
+    t.number === tableId || 
+    t.number === `${tableId}-stol` || 
+    t.number === `${tableId}-kabina` || 
+    t.number === `${tableId}-kabinet` ||
+    (tableId && t.number.replace(/\D/g, '') === tableId.replace(/\D/g, ''))
+  );
+  const effectiveTableId = matchedTable ? matchedTable.id : (tableId || '');
+  const tableDisplay = matchedTable ? (matchedTable.number.includes('kabin') ? matchedTable.number : `${matchedTable.number.replace('-stol', '')}-stol`) : (tableId?.replace('t', '') || '');
+
   // Derived order
-  const activeOrder = orders.find(o => o.tableId === tableId && o.status !== 'paid' && o.status !== 'cancelled');
+  const activeOrder = orders.find(o => o.tableId === effectiveTableId && o.status !== 'paid' && o.status !== 'cancelled');
 
   const popularItems = React.useMemo(() => {
     const counts: Record<string, number> = {};
@@ -51,7 +63,6 @@ export const CustomerMenu = () => {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tableDisplay = tableId?.replace('t', '') || '';
 
   const openFoodDetail = (item: any) => {
     if (!item.isAvailable) return;
@@ -105,8 +116,8 @@ export const CustomerMenu = () => {
     setCart(prev => prev.filter(i => i.id !== id));
   };
 
-  const submitOrder = () => {
-    if (cart.length === 0 || !tableId) return;
+  const submitOrder = async () => {
+    if (cart.length === 0 || !effectiveTableId) return;
     
     const mappedItems = cart.map((i, idx) => ({
       id: `oi${Date.now()}${idx}`,
@@ -117,10 +128,10 @@ export const CustomerMenu = () => {
     }));
 
     if (activeOrder) {
-      addItemsToOrder(activeOrder.id, mappedItems, totalAmount);
+      await addItemsToOrder(activeOrder.id, mappedItems, totalAmount);
     } else {
-      createOrder({
-        tableId,
+      await createOrder({
+        tableId: effectiveTableId,
         status: 'pending',
         items: mappedItems,
         totalAmount
@@ -133,8 +144,8 @@ export const CustomerMenu = () => {
 
   const callWaiter = () => {
     (window as any).customConfirm("Ofitsiantni chaqirishni xohlaysizmi?", () => {
-      if (tableId) {
-        createWaiterCall(tableId);
+      if (effectiveTableId) {
+        createWaiterCall(effectiveTableId);
         alert('Ofitsiant chaqirildi! Kuting...');
       }
     });
