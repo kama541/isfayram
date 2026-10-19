@@ -125,7 +125,6 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
         font-family: 'Consolas', 'Segoe UI Mono', 'Courier New', Courier, monospace !important;
         color: #000 !important;
         font-weight: 700 !important;
-        -webkit-text-stroke: 0.1px #000 !important;
       }
       .print-cashier-container {
         position: absolute !important;
@@ -186,7 +185,6 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
             backgroundColor: '#fff',
             overflow: 'visible',
             fontWeight: 700,
-            WebkitTextStroke: '0.1px #000',
           }}
         >
           <div style={{ textAlign: 'center', margin: '1.5mm 0 1mm' }}>
@@ -194,22 +192,19 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
               fontWeight: 900,
               fontSize: is58mm ? '18px' : '22px',
               textTransform: 'uppercase',
-              letterSpacing: '1.5px',
+              letterSpacing: '1px',
               color: '#000',
-              WebkitTextStroke: '0.4px #000'
             }}>
               {formatKitchenStationName(stationName)}
             </div>
             <div style={{
               fontWeight: 900,
-              fontSize: is58mm ? '13px' : '15px',
-              letterSpacing: '1px',
+              fontSize: is58mm ? '11px' : '13px',
+              letterSpacing: '0.5px',
               marginTop: '1mm',
-              textTransform: 'uppercase',
               color: '#000',
-              WebkitTextStroke: '0.3px #000'
             }}>
-              ISFAYRAM — QUVASOY, UZ
+              Quvasoy, UZ
             </div>
           </div>
 
@@ -352,10 +347,9 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
           backgroundColor: '#fff',
           overflow: 'hidden',
           fontWeight: 700,
-          WebkitTextStroke: '0.1px #000',
         }}
       >
-        {/* ── HEADER: LOGO & BOLD BRAND / LOCATION ── */}
+        {/* ── HEADER: LOGO & BRAND MATCHING IMAGE 2 ── */}
         <div style={{ textAlign: 'center', padding: '1mm 0 1.5mm' }}>
           {order.status === 'cancelled' && (
             <div style={{ fontWeight: 900, marginBottom: '1.5mm', fontSize: '13px' }}>*** BEKOR QILINDI ***</div>
@@ -367,9 +361,9 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
             src={logoImg}
             alt="Isfayram Kafe"
             style={{
-              width: is58mm ? '24mm' : '32mm',
+              width: is58mm ? '26mm' : '34mm',
               height: 'auto',
-              maxHeight: is58mm ? '24mm' : '32mm',
+              maxHeight: is58mm ? '26mm' : '34mm',
               objectFit: 'contain',
               display: 'block',
               margin: '0 auto 1.5mm',
@@ -377,38 +371,23 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
             }}
           />
           <div style={{
-            fontSize: is58mm ? '18px' : '22px',
+            fontSize: is58mm ? '15px' : '18px',
             fontWeight: 900,
-            letterSpacing: '2px',
-            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
             color: '#000',
-            lineHeight: '1.15',
-            WebkitTextStroke: '0.4px #000'
+            lineHeight: '1.25',
           }}>
-            ISFAYRAM
+            Isfayram Kafe
           </div>
           <div style={{
-            fontSize: is58mm ? '14px' : '17px',
+            fontSize: is58mm ? '12px' : '14px',
             fontWeight: 900,
-            letterSpacing: '1.5px',
-            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
             color: '#000',
-            lineHeight: '1.2',
-            marginTop: '1mm',
-            WebkitTextStroke: '0.4px #000'
-          }}>
-            QUVASOY, UZ
-          </div>
-          <div style={{
-            fontSize: is58mm ? '9.5px' : '11px',
-            fontWeight: 900,
-            letterSpacing: '1px',
-            textTransform: 'uppercase',
-            color: '#000',
+            lineHeight: '1.25',
             marginTop: '0.8mm',
-            WebkitTextStroke: '0.2px #000'
           }}>
-            PREMIUM RESTAURANT & KAFE
+            Quvasoy, UZ
           </div>
         </div>
 

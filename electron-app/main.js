@@ -459,7 +459,6 @@ ipcMain.handle('print-receipt-html', async (_, receiptHtml) => {
     box-sizing: border-box !important;
     font-family: 'Consolas', 'Segoe UI Mono', 'Courier New', monospace !important;
     font-weight: 700 !important;
-    -webkit-text-stroke: 0.1px #000 !important;
   }
   .print-cashier-container {
     width: ${is58mm ? '48mm' : '70mm'} !important;
