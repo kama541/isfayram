@@ -197,15 +197,6 @@ export const ReceiptPrint = React.forwardRef<HTMLDivElement, ReceiptPrintProps>(
             }}>
               {formatKitchenStationName(stationName)}
             </div>
-            <div style={{
-              fontWeight: 900,
-              fontSize: is58mm ? '11px' : '13px',
-              letterSpacing: '0.5px',
-              marginTop: '1mm',
-              color: '#000',
-            }}>
-              Quvasoy, UZ
-            </div>
           </div>
 
           {job.isAddition && (
