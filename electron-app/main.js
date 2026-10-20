@@ -653,6 +653,18 @@ ipcMain.handle('print-to-station', async (_, data) => {
 });
 
 app.whenReady().then(async () => {
+  // Avtomatik ravishda kompyuter yoqilganda ishga tushish (Auto-start on Windows startup)
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      openAsHidden: false,
+      path: process.execPath,
+      args: []
+    });
+  } catch (e) {
+    console.error('Failed to set login item settings:', e);
+  }
+
   await startLocalServer();
   createMainWindow();
 });

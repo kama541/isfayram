@@ -211,9 +211,18 @@ export const useStore = create<StoreState>((set, get) => ({
 
       const users: User[] = (profilesData || []).map(p => ({ id: p.id, name: p.full_name, role: p.role }));
       const categories: Category[] = (categoriesData || []).map(c => ({ id: c.id, name: c.name }));
+      
+      const stopListSetting = (settingsData || []).find((s: any) => s.key === 'stop_list_ids');
+      let stopListIds: string[] = [];
+      const hasStopSetting = Boolean(stopListSetting && stopListSetting.value !== undefined && stopListSetting.value !== null);
+      if (hasStopSetting) {
+        try { stopListIds = JSON.parse(stopListSetting.value); } catch {}
+      }
+
       const menuItems: MenuItem[] = (menuItemsData || []).map(m => ({
         id: m.id, categoryId: m.category_id, name: m.name, description: m.description || '',
-        price: Number(m.price), image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500', isAvailable: m.is_available,
+        price: Number(m.price), image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500', 
+        isAvailable: hasStopSetting ? !stopListIds.includes(m.id) : (m.is_available ?? true),
         kitchenStationId: m.kitchen_station_id
       }));
       const tables: Table[] = (tablesData || []).map(t => ({
@@ -383,6 +392,13 @@ export const useStore = create<StoreState>((set, get) => ({
         name: c.name
       }));
 
+      const stopListSetting = (settingsData || []).find((s: any) => s.key === 'stop_list_ids');
+      let stopListIds: string[] = [];
+      const hasStopSetting = Boolean(stopListSetting && stopListSetting.value !== undefined && stopListSetting.value !== null);
+      if (hasStopSetting) {
+        try { stopListIds = JSON.parse(stopListSetting.value); } catch {}
+      }
+
       const menuItems: MenuItem[] = (menuItemsData || []).map(m => ({
         id: m.id,
         categoryId: m.category_id,
@@ -390,7 +406,7 @@ export const useStore = create<StoreState>((set, get) => ({
         description: m.description || '',
         price: Number(m.price),
         image: m.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500',
-        isAvailable: m.is_available,
+        isAvailable: hasStopSetting ? !stopListIds.includes(m.id) : (m.is_available ?? true),
         kitchenStationId: m.kitchen_station_id
       }));
 
@@ -599,17 +615,37 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateMenuItemAvailability: async (id, isAvailable) => {
-    // Optimistic instant UI update
+    // 1. Optimistic instant UI update in Zustand
     set(state => ({
       menuItems: state.menuItems.map(item => item.id === id ? { ...item, isAvailable } : item)
     }));
+
     try {
-      const { error } = await supabase.from('menu_items').update({ is_available: isAvailable }).eq('id', id);
-      if (error) console.error('Failed to update menuItem availability:', error);
+      // 2. Fetch current stop_list_ids from settings
+      const { data: settingData } = await supabase.from('settings').select('value').eq('key', 'stop_list_ids').maybeSingle();
+      let currentStopIds: string[] = [];
+      if (settingData && settingData.value) {
+        try { currentStopIds = JSON.parse(settingData.value); } catch {}
+      }
+
+      if (!isAvailable) {
+        if (!currentStopIds.includes(id)) currentStopIds.push(id);
+      } else {
+        currentStopIds = currentStopIds.filter(itemId => itemId !== id);
+      }
+
+      // 3. Persist to settings table in Supabase
+      await supabase.from('settings').upsert({
+        key: 'stop_list_ids',
+        value: JSON.stringify(currentStopIds),
+        description: 'Stop-listdagi taomlar identifikatorlari'
+      });
+
+      // 4. Try updating menu_items table too
+      await supabase.from('menu_items').update({ is_available: isAvailable }).eq('id', id);
     } catch (e) {
       console.error('updateMenuItemAvailability error:', e);
     }
-    get().silentFetch();
   },
 
   deleteMenuItem: async (id) => {

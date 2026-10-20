@@ -1,11 +1,13 @@
-import { Search, Plus, X, Trash2, CheckCircle2, XCircle, ShieldCheck } from 'lucide-react';
+import { Search, Plus, X, Trash2, CheckCircle2, XCircle, ShieldCheck, Banknote, TrendingUp, Calendar } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { formatCurrency } from '../../utils/format';
 
 export const StaffManagement = () => {
-  const { employees, kitchenStations, addEmployee, updateEmployee, deleteEmployee } = useStore();
+  const { employees, kitchenStations, orders, addEmployee, updateEmployee, deleteEmployee } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'waiter' | 'cashier' | 'kitchen'>('all');
+  const [salaryPeriod, setSalaryPeriod] = useState<'all' | 'today' | 'month'>('today');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     fullName: '',
@@ -32,6 +34,44 @@ export const StaffManagement = () => {
     });
   };
 
+  // Helper to compute waiter salary (8% of closed orders)
+  const getWaiterStats = (waiterId: string) => {
+    const waiterOrders = orders.filter(o => {
+      if (o.status !== 'paid') return false;
+      if (o.waiterId !== waiterId) return false;
+      if (salaryPeriod === 'today') {
+        const orderDate = new Date(o.createdAt).toDateString();
+        const today = new Date().toDateString();
+        return orderDate === today;
+      }
+      if (salaryPeriod === 'month') {
+        const orderDate = new Date(o.createdAt);
+        const now = new Date();
+        return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+
+    const totalSales = waiterOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const commission = Math.round(totalSales * 0.08); // 8% oylik / ish haqi
+    return {
+      orderCount: waiterOrders.length,
+      totalSales,
+      commission
+    };
+  };
+
+  // Total commission across all waiters in selected period
+  const totalWaitersCommission = useMemo(() => {
+    const waiters = employees.filter(e => e.role === 'waiter');
+    return waiters.reduce((sum, w) => sum + getWaiterStats(w.id).commission, 0);
+  }, [employees, orders, salaryPeriod]);
+
+  const totalWaitersSales = useMemo(() => {
+    const waiters = employees.filter(e => e.role === 'waiter');
+    return waiters.reduce((sum, w) => sum + getWaiterStats(w.id).totalSales, 0);
+  }, [employees, orders, salaryPeriod]);
+
   const filteredEmployees = employees.filter(emp => {
     if (roleFilter !== 'all' && emp.role !== roleFilter) return false;
     if (searchTerm.trim()) {
@@ -52,10 +92,85 @@ export const StaffManagement = () => {
       
       {/* Search Header */}
       <div className="bg-[#2a3143] border-b border-white/5 p-6 flex flex-col gap-6">
-        <div>
-          <h1 className="text-[22px] font-bold text-white tracking-wide">
-            Xodimlar
-          </h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-[22px] font-bold text-white tracking-wide">
+              Xodimlar & Oylik Boshqaruvi
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Ofitsiantlarga sotuvdan avtomatik 8% xizmat haqi hisoblanadi
+            </p>
+          </div>
+
+          {/* Salary Period Switcher */}
+          <div className="flex items-center gap-1 bg-[#1e2330] p-1 rounded-xl text-xs font-bold border border-white/10">
+            <span className="text-slate-400 px-2 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" /> Davr:
+            </span>
+            <button
+              onClick={() => setSalaryPeriod('today')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${salaryPeriod === 'today' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              Bugun
+            </button>
+            <button
+              onClick={() => setSalaryPeriod('month')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${salaryPeriod === 'month' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              Shu oy
+            </button>
+            <button
+              onClick={() => setSalaryPeriod('all')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${salaryPeriod === 'all' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              Barchasi
+            </button>
+          </div>
+        </div>
+
+        {/* 8% Waiter Commission Summary Banner */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
+                Jami Ofitsiantlar Oyligi (8%)
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-white mt-1 block">
+                {formatCurrency(totalWaitersCommission)}
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+              8%
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
+                Ofitsiantlar Savdosi ({salaryPeriod === 'today' ? 'Bugun' : salaryPeriod === 'month' ? 'Shu oy' : 'Jami'})
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-white mt-1 block">
+                {formatCurrency(totalWaitersSales)}
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
+                Faol Ofitsiantlar Soni
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-white mt-1 block">
+                {employees.filter(e => e.role === 'waiter' && e.isActive).length} nafar
+              </span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <Banknote className="w-5 h-5" />
+            </div>
+          </div>
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -117,6 +232,7 @@ export const StaffManagement = () => {
               <tr className="border-b border-white/5 bg-[#2a3143] text-xs font-bold uppercase tracking-wider text-slate-400">
                 <th className="py-4 px-6">Ism & Lavozim</th>
                 <th className="py-4 px-6">PIN Kod</th>
+                <th className="py-4 px-6">Savdo & 8% Oylik</th>
                 <th className="py-4 px-6">Holati</th>
                 <th className="py-4 px-6 text-right">Amallar</th>
               </tr>
@@ -134,6 +250,9 @@ export const StaffManagement = () => {
                   <td className="py-4 px-6 text-slate-300 font-mono text-xs">
                     🔒 PIN: 181992
                   </td>
+                  <td className="py-4 px-6 text-slate-400 text-xs">
+                    —
+                  </td>
                   <td className="py-4 px-6">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Faol
@@ -145,7 +264,9 @@ export const StaffManagement = () => {
                 </tr>
               )}
 
-              {filteredEmployees.map((emp, index) => (
+              {filteredEmployees.map((emp, index) => {
+                const stats = emp.role === 'waiter' ? getWaiterStats(emp.id) : null;
+                return (
                 <tr key={emp.id} className={`hover:bg-white/5 transition-colors ${index % 2 !== 0 ? 'bg-[#32394a]/30' : ''}`}>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
@@ -174,6 +295,21 @@ export const StaffManagement = () => {
                   </td>
 
                   <td className="py-4 px-6">
+                    {stats ? (
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-black text-sm">
+                          8% Oylik: {formatCurrency(stats.commission)}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Savdosi: <span className="font-bold text-slate-200">{formatCurrency(stats.totalSales)}</span> ({stats.orderCount} ta stol)
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-slate-500 text-xs">—</span>
+                    )}
+                  </td>
+
+                  <td className="py-4 px-6">
                     <button
                       onClick={() => handleToggleActive(emp)}
                       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all ${
@@ -184,7 +320,7 @@ export const StaffManagement = () => {
                       title="Holatini o'zgartirish uchun bosing"
                     >
                       {emp.isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                      {emp.isActive ? 'Faol (Kirish mumkin)' : 'Nofaol (Bloklangan)'}
+                      {emp.isActive ? 'Faol' : 'Bloklangan'}
                     </button>
                   </td>
 
@@ -202,11 +338,11 @@ export const StaffManagement = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
-              
+              );})}
+
               {!showAdminRow && filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-12 text-center text-slate-500 text-sm">
+                  <td colSpan={5} className="py-12 text-center text-slate-500 text-sm">
                     Xodimlar topilmadi
                   </td>
                 </tr>

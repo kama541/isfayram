@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, Search, Star, Zap, XCircle, X } from 'lucide-react
 import type { MenuItem } from '../../types';
 
 export const MenuManagement = () => {
-  const { menuItems, categories, kitchenStations, deleteMenuItem, addMenuItem, updateMenuItem } = useStore();
+  const { menuItems, categories, kitchenStations, deleteMenuItem, addMenuItem, updateMenuItem, updateMenuItemAvailability } = useStore();
   
   const [filterMode, setFilterMode] = useState<'all' | 'popular' | 'go' | 'stop' | 'category'>('all');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -120,10 +120,7 @@ export const MenuManagement = () => {
   const toggleAvailability = async (item: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!hasManagePermission) return;
-    await updateMenuItem({
-      ...item,
-      isAvailable: !item.isAvailable
-    });
+    await updateMenuItemAvailability(item.id, !item.isAvailable);
   };
 
   const openModal = (item?: MenuItem) => {
@@ -270,7 +267,7 @@ export const MenuManagement = () => {
         </button>
       </div>
 
-      {/* Categories Grid (EXACTLY 3 COLUMNS matching Photo 4) */}
+      {/* Categories Grid (EXACTLY 3 COLUMNS matching Photo 4: 2 rows inside each card) */}
       <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
         {categories.map(c => {
           const isSelected = activeCategory === c.id;
@@ -282,42 +279,47 @@ export const MenuManagement = () => {
                 setFilterMode('category');
                 setActiveCategory(isSelected ? null : c.id);
               }}
-              className={`p-2.5 sm:p-3 rounded-2xl flex items-center justify-between text-left transition-all cursor-pointer active:scale-[0.98] shadow-sm border ${
+              className={`p-2.5 sm:p-3 rounded-2xl flex flex-col justify-between text-left transition-all cursor-pointer active:scale-[0.98] shadow-sm border ${
                 isSelected
-                  ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900/20'
+                  ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900/20 shadow-md'
                   : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300'
               }`}
               style={{
-                background: isSelected ? '#0F172A' : '#FFFFFF',
+                background: isSelected ? '#0F172A' : '#EAEEF3',
                 color: isSelected ? '#FFFFFF' : '#0F172A',
-                borderColor: isSelected ? '#0F172A' : '#E2E8F0',
-                minHeight: '48px'
+                borderColor: isSelected ? '#0F172A' : '#D5DDE6',
+                minHeight: '62px'
               }}
             >
-              <span className="font-black text-[11px] sm:text-xs uppercase truncate flex items-center gap-1.5">
+              {/* Top row: Dot on left, count + trash on right */}
+              <div className="flex items-center justify-between w-full">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-amber-400' : 'bg-slate-400'}`} />
-                <span className="truncate">{c.name}</span>
-              </span>
-              <div className="flex items-center gap-1 shrink-0 ml-1">
-                <span className={`text-[11px] sm:text-xs font-black ${isSelected ? 'text-amber-400' : 'text-slate-400'}`}>
-                  {count}
-                </span>
-                {hasManagePermission && (
-                  <span 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if(window.confirm(`Haqiqatan ham "${c.name}" kategoriyasini o'chirmoqchimisiz?`)) {
-                        useStore.getState().deleteCategory(c.id);
-                        if (activeCategory === c.id) setActiveCategory(null);
-                      }
-                    }}
-                    className={`p-1 rounded-md transition-colors ${isSelected ? 'hover:bg-white/10 text-rose-300' : 'hover:bg-rose-50 text-rose-500'}`}
-                    title="Kategoriyani o'chirish"
-                  >
-                    <Trash2 className="w-3 h-3" />
+                <div className="flex items-center gap-1 shrink-0 ml-1">
+                  <span className={`text-[11px] sm:text-xs font-black ${isSelected ? 'text-amber-400' : 'text-slate-600'}`}>
+                    {count}
                   </span>
-                )}
+                  {hasManagePermission && (
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if(window.confirm(`Haqiqatan ham "${c.name}" kategoriyasini o'chirmoqchimisiz?`)) {
+                          useStore.getState().deleteCategory(c.id);
+                          if (activeCategory === c.id) setActiveCategory(null);
+                        }
+                      }}
+                      className={`p-1 rounded-md transition-colors ${isSelected ? 'hover:bg-white/10 text-rose-300' : 'hover:bg-rose-50 text-rose-500'}`}
+                      title="Kategoriyani o'chirish"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Bottom row: Category Name in bold uppercase */}
+              <span className={`font-black text-[11px] sm:text-xs uppercase truncate tracking-tight mt-1 ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+                {c.name}
+              </span>
             </div>
           );
         })}

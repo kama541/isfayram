@@ -47,6 +47,16 @@
   .dark .border-slate-100, .dark .border-slate-200 { border-color: rgba(212,175,55,0.12) !important; }
   .dark .border-slate-700 { border-color: rgba(212,175,55,0.12) !important; }
 
+  /* Select dropdowns across all platforms */
+  select {
+    background-color: #FFFFFF;
+    color: #0F172A;
+  }
+  select option {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+  }
+
   /* Input fields in dark mode */
   .dark input, .dark select, .dark textarea {
     background-color: rgba(255,255,255,0.04) !important;
@@ -55,8 +65,8 @@
   }
   .dark input::placeholder, .dark textarea::placeholder { color: #6C6659 !important; }
   .dark select option {
-    background-color: #1C1A17;
-    color: #F5F2EA;
+    background-color: #1C1A17 !important;
+    color: #F5F2EA !important;
   }
 
   /* Modals / dialogs */
