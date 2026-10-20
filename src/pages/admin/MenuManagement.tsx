@@ -199,25 +199,25 @@ export const MenuManagement = () => {
       </div>
 
       {/* Top 3 Status Buttons matching Photo 4 (3 Columns) */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {/* Ommabop */}
         <button
           onClick={() => {
             setFilterMode(prev => prev === 'popular' ? 'all' : 'popular');
             setActiveCategory(null);
           }}
-          className={`p-3 sm:p-3.5 rounded-2xl flex flex-col justify-between text-left transition-all active:scale-[0.98] shadow-sm border ${
-            filterMode === 'popular' ? 'ring-2 ring-amber-500 shadow-md' : 'hover:brightness-95'
+          className={`p-2.5 rounded-lg flex flex-col justify-between text-left transition-all active:scale-[0.98] border ${
+            filterMode === 'popular' ? 'ring-2 ring-amber-300' : 'hover:brightness-105'
           }`}
-          style={{ background: '#FACC15', borderColor: '#EAB308', minHeight: '68px' }}
+          style={{ background: '#F5B82E', borderColor: '#D99B1A', height: '54px' }}
         >
           <div className="flex items-center justify-between w-full">
-            <span className="text-amber-700 text-base sm:text-lg">★</span>
-            <span className="text-xs sm:text-sm font-black px-1.5 py-0.5 rounded-md bg-black/10 text-slate-950">
+            <span className="text-amber-950 text-xs font-black">★</span>
+            <span className="text-xs font-black text-slate-950">
               {popularCount}
             </span>
           </div>
-          <span className="font-black text-xs sm:text-sm text-slate-950 mt-1">
+          <span className="font-extrabold text-xs text-slate-950 leading-none">
             Ommabop
           </span>
         </button>
@@ -228,18 +228,18 @@ export const MenuManagement = () => {
             setFilterMode(prev => prev === 'go' ? 'all' : 'go');
             setActiveCategory(null);
           }}
-          className={`p-3 sm:p-3.5 rounded-2xl flex flex-col justify-between text-left transition-all active:scale-[0.98] shadow-sm border ${
-            filterMode === 'go' ? 'ring-2 ring-emerald-600 shadow-md' : 'hover:brightness-95'
+          className={`p-2.5 rounded-lg flex flex-col justify-between text-left transition-all active:scale-[0.98] border ${
+            filterMode === 'go' ? 'ring-2 ring-emerald-300' : 'hover:brightness-105'
           }`}
-          style={{ background: '#4ADE80', borderColor: '#22C55E', minHeight: '68px' }}
+          style={{ background: '#4ADE80', borderColor: '#22C55E', height: '54px' }}
         >
           <div className="flex items-center justify-between w-full">
-            <span className="w-5 h-5 rounded-full bg-emerald-700 text-white flex items-center justify-center text-xs font-bold">⚡</span>
-            <span className="text-xs sm:text-sm font-black px-1.5 py-0.5 rounded-md bg-black/10 text-slate-950">
+            <span className="w-4 h-4 rounded-full bg-emerald-800 text-white flex items-center justify-center text-[10px] font-bold">⚡</span>
+            <span className="text-xs font-black text-slate-950">
               {goCount}
             </span>
           </div>
-          <span className="font-black text-xs sm:text-sm text-slate-950 mt-1">
+          <span className="font-extrabold text-xs text-slate-950 leading-none">
             Go ro'yxat
           </span>
         </button>
@@ -250,25 +250,25 @@ export const MenuManagement = () => {
             setFilterMode(prev => prev === 'stop' ? 'all' : 'stop');
             setActiveCategory(null);
           }}
-          className={`p-3 sm:p-3.5 rounded-2xl flex flex-col justify-between text-left transition-all active:scale-[0.98] shadow-sm border ${
-            filterMode === 'stop' ? 'ring-2 ring-rose-600 shadow-md' : 'hover:brightness-95'
+          className={`p-2.5 rounded-lg flex flex-col justify-between text-left transition-all active:scale-[0.98] border ${
+            filterMode === 'stop' ? 'ring-2 ring-rose-300' : 'hover:brightness-105'
           }`}
-          style={{ background: '#FB7185', borderColor: '#F43F5E', minHeight: '68px' }}
+          style={{ background: '#FB7185', borderColor: '#F43F5E', height: '54px' }}
         >
           <div className="flex items-center justify-between w-full">
-            <span className="w-5 h-5 rounded-full bg-rose-700 text-white flex items-center justify-center text-xs font-black">✕</span>
-            <span className="text-xs sm:text-sm font-black px-1.5 py-0.5 rounded-md bg-black/10 text-slate-950">
+            <span className="w-4 h-4 rounded-full bg-rose-800 text-white flex items-center justify-center text-[10px] font-black">✕</span>
+            <span className="text-xs font-black text-slate-950">
               {stopCount}
             </span>
           </div>
-          <span className="font-black text-xs sm:text-sm text-slate-950 mt-1">
+          <span className="font-extrabold text-xs text-slate-950 leading-none">
             Stop ro'yxat
           </span>
         </button>
       </div>
 
       {/* Categories Grid (EXACTLY 3 COLUMNS matching Photo 4: 2 rows inside each card) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+      <div className="grid grid-cols-3 gap-2">
         {categories.map(c => {
           const isSelected = activeCategory === c.id;
           const count = categoryCounts[c.id] || 0;
@@ -279,7 +279,7 @@ export const MenuManagement = () => {
                 setFilterMode('category');
                 setActiveCategory(isSelected ? null : c.id);
               }}
-              className={`p-2.5 sm:p-3 rounded-2xl flex flex-col justify-between text-left transition-all cursor-pointer active:scale-[0.98] shadow-sm border ${
+              className={`p-2 rounded-lg flex flex-col justify-between text-left transition-all cursor-pointer active:scale-[0.98] border ${
                 isSelected
                   ? 'bg-slate-900 text-white border-slate-900 ring-2 ring-slate-900/20 shadow-md'
                   : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300'
@@ -287,15 +287,15 @@ export const MenuManagement = () => {
               style={{
                 background: isSelected ? '#0F172A' : '#EAEEF3',
                 color: isSelected ? '#FFFFFF' : '#0F172A',
-                borderColor: isSelected ? '#0F172A' : '#D5DDE6',
-                minHeight: '62px'
+                borderColor: isSelected ? '#0F172A' : '#D0D7E1',
+                height: '50px'
               }}
             >
               {/* Top row: Dot on left, count + trash on right */}
-              <div className="flex items-center justify-between w-full">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-amber-400' : 'bg-slate-400'}`} />
+              <div className="flex items-center justify-between w-full leading-none">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-amber-400' : 'bg-slate-400'}`} />
                 <div className="flex items-center gap-1 shrink-0 ml-1">
-                  <span className={`text-[11px] sm:text-xs font-black ${isSelected ? 'text-amber-400' : 'text-slate-600'}`}>
+                  <span className={`text-[10px] sm:text-[11px] font-extrabold ${isSelected ? 'text-amber-400' : 'text-slate-600'}`}>
                     {count}
                   </span>
                   {hasManagePermission && (
@@ -307,7 +307,7 @@ export const MenuManagement = () => {
                           if (activeCategory === c.id) setActiveCategory(null);
                         }
                       }}
-                      className={`p-1 rounded-md transition-colors ${isSelected ? 'hover:bg-white/10 text-rose-300' : 'hover:bg-rose-50 text-rose-500'}`}
+                      className={`p-0.5 rounded transition-colors ${isSelected ? 'hover:bg-white/10 text-rose-300' : 'hover:bg-rose-50 text-rose-500'}`}
                       title="Kategoriyani o'chirish"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -317,7 +317,7 @@ export const MenuManagement = () => {
               </div>
 
               {/* Bottom row: Category Name in bold uppercase */}
-              <span className={`font-black text-[11px] sm:text-xs uppercase truncate tracking-tight mt-1 ${isSelected ? 'text-white' : 'text-slate-900'}`}>
+              <span className={`font-black text-[11px] uppercase truncate tracking-tight ${isSelected ? 'text-white' : 'text-slate-900'}`}>
                 {c.name}
               </span>
             </div>
@@ -326,16 +326,16 @@ export const MenuManagement = () => {
       </div>
 
       {/* Centered Category Divider matching Photo 4 */}
-      <div className="flex items-center justify-center gap-3 my-3">
-        <div className="h-px bg-slate-200 flex-1 max-w-[240px]" />
-        <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-500">
+      <div className="flex items-center justify-center gap-3 my-2">
+        <div className="h-px bg-slate-200 flex-1 max-w-[200px]" />
+        <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
           {currentSectionTitle}
         </span>
-        <div className="h-px bg-slate-200 flex-1 max-w-[240px]" />
+        <div className="h-px bg-slate-200 flex-1 max-w-[200px]" />
       </div>
 
-      {/* Dish Cards Grid (EXACTLY 3 COLUMNS with WHITE CARDS as requested: "orqasi oq bosin") */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
+      {/* Dish Cards Grid (EXACTLY 3 COLUMNS) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {filteredItems.map(item => {
           const isKgItem = item.name.toLowerCase().includes('kg') || 
                            item.name.toLowerCase().includes('1kg') ||
@@ -345,13 +345,13 @@ export const MenuManagement = () => {
             <div 
               key={item.id} 
               onClick={() => hasManagePermission && openModal(item)}
-              className={`rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between transition-all select-none shadow-sm hover:shadow-md cursor-pointer border ${
-                !item.isAvailable ? 'opacity-60 bg-slate-100 border-slate-200' : 'bg-white hover:border-slate-400 border-slate-200'
+              className={`rounded-lg p-2.5 flex flex-col justify-between transition-all select-none border cursor-pointer ${
+                !item.isAvailable ? 'opacity-50 bg-slate-100 border-slate-200' : 'bg-white hover:border-slate-400 border-slate-200'
               }`}
               style={{
-                background: item.isAvailable ? '#FFFFFF' : '#F1F5F9',
-                borderColor: '#E2E8F0',
-                minHeight: '94px',
+                background: item.isAvailable ? '#EAEEF3' : '#F1F5F9',
+                borderColor: '#D0D7E1',
+                height: '72px',
               }}
             >
               {/* Top: Dish Name in BOLD UPPERCASE BLACK matching Photos 1, 2, 3, 5 */}
