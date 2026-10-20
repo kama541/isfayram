@@ -21,6 +21,26 @@ export const Purchases = () => {
     p.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleExportCSV = () => {
+    if (purchases.length === 0) {
+      alert("Eksport qilish uchun xaridlar mavjud emas");
+      return;
+    }
+    const headers = ["ID", "Mahsulot", "Miqdori", "Narxi (dona/kg)", "Jami summa", "Sana", "Xarid qiluvchi"];
+    const rows = purchases.map(p => [p.id, `"${p.item.replace(/"/g, '""')}"`, `"${p.quantity}"`, p.price, p.total, p.date, p.user]);
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `xaridlar_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const totalSpent = purchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -30,12 +50,28 @@ export const Purchases = () => {
           </h1>
           <p className="text-slate-500 text-sm mt-1">Bozor va do'konlardan qilingan kunlik xaridlar ro'yxati</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
-        >
-          <Plus className="w-5 h-5" /> Xarid qo'shish
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleExportCSV}
+            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
+          >
+            Eksport (CSV)
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
+          >
+            <Plus className="w-5 h-5" /> Xarid qo'shish
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+        <div>
+          <div className="text-xs text-slate-400 font-bold uppercase">Jami xaridlar summasi</div>
+          <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{totalSpent.toLocaleString('uz-UZ')} so'm</div>
+        </div>
+        <div className="text-slate-500 text-sm font-semibold">{purchases.length} ta yozuv</div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">

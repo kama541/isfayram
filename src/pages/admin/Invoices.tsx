@@ -21,6 +21,27 @@ export const Invoices = () => {
     inv.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleExportCSV = () => {
+    if (invoices.length === 0) {
+      alert("Eksport qilish uchun fakturalar mavjud emas");
+      return;
+    }
+    const headers = ["Faktura ID", "Yetkazib beruvchi", "Sana", "Summa", "Holat"];
+    const rows = invoices.map(i => [i.id, `"${i.supplier.replace(/"/g, '""')}"`, i.date, i.amount, i.status]);
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `hisob_fakturalar_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const totalPaid = invoices.filter(i => i.status === "To'langan").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+  const totalPending = invoices.filter(i => i.status === "Kutilmoqda").reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -31,8 +52,11 @@ export const Invoices = () => {
           <p className="text-slate-500 text-sm mt-1">Kirim hujjatlari va fakturalarni boshqarish</p>
         </div>
         <div className="flex gap-3">
-          <button className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <Download className="w-5 h-5" /> Eksport
+          <button 
+            onClick={handleExportCSV}
+            className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors"
+          >
+            <Download className="w-5 h-5" /> Eksport (CSV)
           </button>
           <button 
             onClick={() => setIsModalOpen(true)}
@@ -40,6 +64,17 @@ export const Invoices = () => {
           >
             <Plus className="w-5 h-5" /> Yangi faktura
           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="text-xs text-slate-400 font-bold uppercase">To'langan fakturalar</div>
+          <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{totalPaid.toLocaleString('uz-UZ')} so'm</div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="text-xs text-slate-400 font-bold uppercase">To'lov kutilayotgan</div>
+          <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{totalPending.toLocaleString('uz-UZ')} so'm</div>
         </div>
       </div>
 
