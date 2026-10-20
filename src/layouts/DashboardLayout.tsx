@@ -20,22 +20,27 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   // Mobil: sahifa almashganda sidebarni yopish
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
+  const isMenuPage = location.pathname.endsWith('/menu');
+
   return (
-    <div className="flex h-screen overflow-hidden font-sans" style={{ background: '#13120F', color: '#F5F2EA' }}>
+    <div className="flex h-screen overflow-hidden font-sans" style={{ background: isMenuPage ? '#F8FAFC' : '#13120F', color: isMenuPage ? '#0F172A' : '#F5F2EA' }}>
       <Sidebar role={role} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         
         {/* Top Header */}
         <header className="h-14 md:h-16 flex items-center justify-between px-3 md:px-8 shrink-0 z-10"
-          style={{ background: '#1C1A17', borderBottom: '1px solid rgba(212,175,55,0.1)' }}
+          style={{ 
+            background: isMenuPage ? '#FFFFFF' : '#1C1A17', 
+            borderBottom: isMenuPage ? '1px solid #E2E8F0' : '1px solid rgba(212,175,55,0.1)' 
+          }}
         >
           <div className="flex items-center gap-4 flex-1">
             {/* Breadcrumb area - empty for now */}
             <button
               id="mobile-menu-btn"
               onClick={() => setSidebarOpen(true)}
-              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-white/5"
-              style={{ color: '#D4AF37', border: '1px solid rgba(212,175,55,0.2)' }}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl hover:bg-black/5"
+              style={{ color: isMenuPage ? '#0F172A' : '#D4AF37', border: isMenuPage ? '1px solid #CBD5E1' : '1px solid rgba(212,175,55,0.2)' }}
               aria-label="Menyu"
             >
               <Menu className="w-5 h-5" />
@@ -43,7 +48,11 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden lg:flex items-center gap-2 text-sm font-medium px-4 py-1.5 rounded-full"
-              style={{ color: '#8A8070', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.08)' }}
+              style={{ 
+                color: isMenuPage ? '#64748B' : '#8A8070', 
+                background: isMenuPage ? '#F1F5F9' : 'rgba(255,255,255,0.04)', 
+                border: isMenuPage ? '1px solid #E2E8F0' : '1px solid rgba(212,175,55,0.08)' 
+              }}
             >
               <Calendar className="w-4 h-4" />
               <span>{new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -51,8 +60,11 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
 
             <div className="relative">
               <button
-                className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-white/5"
-                style={{ color: '#8A8070', border: '1px solid rgba(212,175,55,0.1)' }}
+                className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:bg-black/5"
+                style={{ 
+                  color: isMenuPage ? '#64748B' : '#8A8070', 
+                  border: isMenuPage ? '1px solid #E2E8F0' : '1px solid rgba(212,175,55,0.1)' 
+                }}
               >
                 <Bell className="w-4 h-4" />
                 {pendingCallsCount > 0 && (
@@ -66,8 +78,11 @@ export const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-hide" style={{ background: '#13120F' }}>
-          <div className="mx-auto max-w-7xl p-3 md:p-6">
+        <main 
+          className="flex-1 overflow-x-hidden overflow-y-auto scrollbar-hide" 
+          style={{ background: isMenuPage ? '#F8FAFC' : '#13120F' }}
+        >
+          <div className={isMenuPage ? "w-full max-w-[1600px] mx-auto p-3 md:p-6" : "mx-auto max-w-7xl p-3 md:p-6"}>
             {children}
           </div>
         </main>

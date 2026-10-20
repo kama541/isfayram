@@ -29,50 +29,32 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Override Tailwind default grays to match dark theme */
-  .bg-slate-50, .dark .bg-slate-50 { background-color: #1C1A17 !important; }
-  .bg-slate-100, .dark .bg-slate-100 { background-color: #24211D !important; }
-  .bg-slate-200, .dark .bg-slate-200 { background-color: #2D2A24 !important; }
-  .bg-white, .dark .bg-white { background-color: #1C1A17 !important; }
-  .bg-slate-800 { background-color: #1C1A17 !important; }
-  .bg-slate-900 { background-color: #13120F !important; }
+  /* Override Tailwind default grays to match dark theme ONLY when .dark is active */
+  .dark .bg-slate-50 { background-color: #1C1A17 !important; }
+  .dark .bg-slate-100 { background-color: #24211D !important; }
+  .dark .bg-slate-200 { background-color: #2D2A24 !important; }
+  .dark .bg-white { background-color: #1C1A17 !important; }
+  .dark .bg-slate-800 { background-color: #1C1A17 !important; }
+  .dark .bg-slate-900 { background-color: #13120F !important; }
 
-  .text-slate-800, .text-slate-900 { color: #F5F2EA !important; }
-  .text-slate-700 { color: #D4CFCA !important; }
-  .text-slate-600 { color: #A39B8B !important; }
-  .text-slate-500 { color: #8A8070 !important; }
-  .text-slate-400 { color: #6C6659 !important; }
-  .text-white { color: #F5F2EA !important; }
+  .dark .text-slate-800, .dark .text-slate-900 { color: #F5F2EA !important; }
+  .dark .text-slate-700 { color: #D4CFCA !important; }
+  .dark .text-slate-600 { color: #A39B8B !important; }
+  .dark .text-slate-500 { color: #8A8070 !important; }
+  .dark .text-slate-400 { color: #6C6659 !important; }
+  .dark .text-white { color: #F5F2EA !important; }
 
-  .border-slate-100, .border-slate-200 { border-color: rgba(212,175,55,0.12) !important; }
-  .border-slate-700 { border-color: rgba(212,175,55,0.12) !important; }
+  .dark .border-slate-100, .dark .border-slate-200 { border-color: rgba(212,175,55,0.12) !important; }
+  .dark .border-slate-700 { border-color: rgba(212,175,55,0.12) !important; }
 
-  /* Blue accent → gold */
-  .bg-blue-600 { background-color: #c9a227 !important; }
-  .bg-blue-700, .hover\:bg-blue-700:hover { background-color: #b8921e !important; }
-  .bg-blue-50 { background-color: rgba(212,175,55,0.08) !important; }
-  .bg-blue-100 { background-color: rgba(212,175,55,0.12) !important; }
-  .text-blue-600 { color: #D4AF37 !important; }
-  .text-blue-500 { color: #D4AF37 !important; }
-  .text-blue-400 { color: #D4AF37 !important; }
-  .ring-blue-500, .focus\:ring-blue-500:focus { --tw-ring-color: rgba(212,175,55,0.4) !important; }
-  .border-blue-500, .focus\:border-blue-500:focus { border-color: #D4AF37 !important; }
-  .shadow-blue-600\/20 { box-shadow: 0 4px 16px rgba(212,175,55,0.15) !important; }
-
-
-  /* Input fields */
-  input, select, textarea {
+  /* Input fields in dark mode */
+  .dark input, .dark select, .dark textarea {
     background-color: rgba(255,255,255,0.04) !important;
     border-color: rgba(212,175,55,0.2) !important;
     color: #F5F2EA !important;
   }
-  input::placeholder, textarea::placeholder { color: #6C6659 !important; }
-  input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: #D4AF37 !important;
-    box-shadow: 0 0 0 2px rgba(212,175,55,0.15) !important;
-  }
-  select option {
+  .dark input::placeholder, .dark textarea::placeholder { color: #6C6659 !important; }
+  .dark select option {
     background-color: #1C1A17;
     color: #F5F2EA;
   }
